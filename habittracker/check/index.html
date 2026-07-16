@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palace Habit Tracker Premium</title>
+    <title>Palace Notion Habit Tracker</title>
     <style>
         :root {
             --palace-red: #9E3640;
-            --dark-charcoal: #1a1a1a;
-            --bg-cream: #ffffff; 
+            --dark-charcoal: #1e1e1e;
+            --bg-block: #ffffff; 
             --gray-sub: #666666;
-            --gray-light: #f3f3f3;
-            --card-width: 550px;
-            --card-height: 130px;
+            --gray-light: #f4f4f4;
+            --border-heavy: 3px solid #1e1e1e;
         }
 
         * {
@@ -24,13 +23,14 @@
         }
 
         body {
-            background-color: transparent;
-            padding: 20px;
+            background-color: transparent; /* ให้เนียนไปกับ Notion */
+            padding: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             width: 100%;
+            overflow-x: hidden;
         }
 
         .habits-container {
@@ -38,31 +38,32 @@
             flex-direction: column;
             gap: 16px;
             width: 100%;
-            max-width: var(--card-width);
+            max-width: 550px; /* คุมขนาดสูงสุดตามบรีฟเดิม */
         }
 
-        /* 550x130 Premium Block */
+        /* Notion-Optimized 550x130 Block Box */
         .habit-block {
             width: 100%;
-            height: var(--card-height);
-            background: var(--bg-cream);
+            height: 130px;
+            background: var(--bg-block);
+            border: var(--border-heavy);
             border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            box-shadow: 5px 5px 0px var(--dark-charcoal); /* เพิ่มมิติแนวสตรีทเท่ๆ ไม่ให้จมหายไปใน Notion */
             position: relative;
             display: flex;
             align-items: center;
-            padding: 0 24px;
+            padding: 0 20px;
             cursor: pointer;
-            overflow: visible; /* Dynamic particle overflow allowed */
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+            overflow: visible;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
         }
 
         .habit-block:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px var(--dark-charcoal);
         }
 
-        /* Fluid Smooth Liquid Animation Fill from (1) to (2) */
+        /* Ultra Smooth Liquid Fill Layer */
         .fill-layer {
             position: absolute;
             top: 0;
@@ -70,7 +71,7 @@
             width: 100%;
             height: 100%;
             background: var(--palace-red);
-            border-radius: 16px;
+            border-radius: 12px; /* หลบในกรอบ */
             z-index: 1;
             clip-path: circle(0% at 90% 50%);
             transition: clip-path 0.55s cubic-bezier(0.4, 0, 0.2, 1);
@@ -80,95 +81,87 @@
             clip-path: circle(120% at 90% 50%);
         }
 
-        /* Inner Structure */
+        /* Layout Grid */
         .habit-content {
             position: relative;
             z-index: 2;
             display: grid;
-            grid-template-columns: 60px 1fr 40px;
+            grid-template-columns: 55px 1fr 35px;
             align-items: center;
             width: 100%;
             height: 100%;
-            transition: color 0.4s ease;
-        }
-
-        .habit-block.checked .habit-content {
-            color: #ffffff;
+            gap: 8px;
         }
 
         .icon-box {
-            font-size: 2.4rem;
+            font-size: 2.3rem;
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .habit-block.checked .icon-box {
-            transform: scale(1.15) rotate(-5deg);
+            transform: scale(1.2) rotate(10deg);
         }
 
-        /* Centralizing & Prioritizing the MSG text */
+        /* Text Area controls */
         .info-box {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             height: 100%;
-            padding-left: 10px;
+            overflow: hidden;
         }
 
         .habit-title-row {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .habit-name {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 700;
             color: var(--gray-sub);
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-            transition: color 0.4s ease;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .category-badge {
             font-size: 0.6rem;
             font-weight: 800;
             background: var(--gray-light);
-            color: #444;
-            padding: 2px 8px;
-            border-radius: 20px;
+            color: #333;
+            padding: 1px 6px;
+            border-radius: 4px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        .habit-block.checked .habit-name {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .habit-block.checked .category-badge {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-        }
-
-        /* MSG text made Largest & Most Prominent */
+        /* The Prominent Highlight Message Display */
         .message-text {
-            font-size: 1.4rem;
+            font-size: 1.25rem;
             font-weight: 800;
             color: var(--dark-charcoal);
-            line-height: 1.2;
-            letter-spacing: -0.2px;
-            transition: color 0.4s ease, transform 0.4s ease;
+            line-height: 1.25;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
-        .habit-block.checked .message-text {
-            color: #ffffff;
-            transform: scale(1.02);
-        }
+        /* Color swap when completed */
+        .habit-block.checked .habit-name { color: rgba(255, 255, 255, 0.75); }
+        .habit-block.checked .category-badge { background: rgba(255, 255, 255, 0.25); color: #fff; }
+        .habit-block.checked .message-text { color: #ffffff; }
 
-        /* UI State Indicators: Checkbox that morphs beautifully */
+        /* UI State Indicators Checkbox */
         .state-indicator {
             display: flex;
             align-items: center;
@@ -176,31 +169,30 @@
         }
 
         .custom-checkbox {
-            width: 28px;
-            height: 28px;
-            border: 2px solid #ddd;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ccc;
             border-radius: 50%;
             background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
+            transition: all 0.3s ease;
         }
 
         .habit-block.checked .custom-checkbox {
-            border-color: #ffffff;
-            background: #ffffff;
-            transform: scale(1.1);
+            border-color: #fff;
+            background: #fff;
+            transform: scale(1.05);
         }
 
         .custom-checkbox::after {
             content: '✓';
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: 900;
             color: var(--palace-red);
             opacity: 0;
-            transform: scale(0.5);
+            transform: scale(0.6);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
@@ -209,53 +201,46 @@
             transform: scale(1);
         }
 
-        /* Action overlays hidden gracefully */
+        /* Actions hidden cleanly on hover */
         .action-overlay {
             position: absolute;
-            left: -80px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            opacity: 0;
-            transition: opacity 0.3s ease, left 0.3s ease;
+            left: 10px;
+            top: -12px;
             z-index: 10;
+            display: none;
+            gap: 4px;
         }
 
         .habit-block:hover .action-overlay {
-            opacity: 1;
-            left: -65px;
+            display: flex;
         }
 
         .action-btn {
             background: var(--dark-charcoal);
             color: white;
             border: none;
-            padding: 4px 8px;
-            font-size: 0.65rem;
+            padding: 2px 6px;
+            font-size: 0.6rem;
             font-weight: 700;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
-            text-transform: uppercase;
         }
 
-        /* Spark Particles Design */
-        .particle {
+        /* Fireworks sparks */
+        .sparkle {
             position: absolute;
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
-            background: var(--palace-red);
             pointer-events: none;
             opacity: 0;
             z-index: 99;
         }
 
-        /* Hidden Config Button Setup */
+        /* Hidden controls bench */
         .bottom-controls {
             width: 100%;
-            max-width: var(--card-width);
+            max-width: 550px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -263,61 +248,56 @@
         }
 
         .btn-hidden-trigger {
-            width: 12px;
-            height: 12px;
-            background: rgba(0,0,0,0.03);
-            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.02);
             border: none;
+            border-radius: 50%;
             cursor: pointer;
-            transition: background 0.3s ease;
         }
 
         .btn-hidden-trigger:hover {
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.1);
         }
 
         .editor-panel {
             display: none;
             width: 100%;
             background: #ffffff;
-            border: 1px solid #e5e5e5;
+            border: var(--border-heavy);
             border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 14px;
             flex-direction: column;
-            gap: 10px;
-            margin-top: 12px;
+            gap: 8px;
+            margin-top: 8px;
+            box-shadow: 4px 4px 0px var(--dark-charcoal);
         }
 
         .editor-row {
             display: grid;
-            grid-template-columns: 100px 1fr;
+            grid-template-columns: 90px 1fr;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .editor-row label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
-            color: var(--gray-sub);
         }
 
         .editor-row input {
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 0.85rem;
-            outline: none;
+            border: 2px solid var(--dark-charcoal);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
 
-    <!-- Main Active Grid Stack -->
     <div class="habits-container" id="habits-list"></div>
 
-    <!-- Hidden Setup Controls Anchor -->
     <div class="bottom-controls">
         <button class="btn-hidden-trigger" onclick="toggleEditorPanel()"></button>
         
@@ -325,33 +305,31 @@
             <input type="hidden" id="edit-id" value="">
             <div class="editor-row">
                 <label>Icon & Name</label>
-                <div style="display: grid; grid-template-columns: 50px 1fr; gap: 6px;">
-                    <input type="text" id="habit-icon" placeholder="🔥" value="🔥" style="text-align: center;">
-                    <input type="text" id="habit-name" placeholder="E.g., Production Shift">
+                <div style="display: grid; grid-template-columns: 50px 1fr; gap: 4px;">
+                    <input type="text" id="habit-icon" value="🎧" style="text-align: center;">
+                    <input type="text" id="habit-name" placeholder="Habit Title">
                 </div>
             </div>
             <div class="editor-row">
-                <label>Category Tag</label>
-                <input type="text" id="habit-category" placeholder="e.g., MUSIC, HEALTH" value="MUSIC">
+                <label>Category</label>
+                <input type="text" id="habit-category" value="MUSIC">
             </div>
             <div class="editor-row">
-                <label>Unfinished MSG</label>
-                <input type="text" id="habit-todo-msg" placeholder="Warning text to prioritize" value="Cook a new arrangement track today!">
+                <label>Todo MSG</label>
+                <input type="text" id="habit-todo-msg" value="Mix EQ vocal matching the beat!">
             </div>
             <div class="editor-row">
-                <label>Finished MSG</label>
-                <input type="text" id="habit-done-msg" placeholder="Text when checked" value="ARRANGEMENT COMPLETED! 🔥">
+                <label>Done MSG</label>
+                <input type="text" id="habit-done-msg" value="VOCALS SATISFACTORILY MIXED!">
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
-                <button class="action-btn" style="padding:8px;" onclick="saveHabit()">Save Configuration</button>
-                <button class="action-btn" style="padding:8px; background:#f0f0f0; color:#333;" onclick="resetEditor()">Clear Fields</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
+                <button class="action-btn" style="padding: 6px;" onclick="saveHabit()">Save</button>
+                <button class="action-btn" style="padding: 6px; background:#ddd; color:#000;" onclick="resetEditor()">Clear</button>
             </div>
         </div>
     </div>
 
     <script>
-        let currentTrackingDate = new Date().toDateString();
-
         let habits = [
             {
                 id: 1,
@@ -360,8 +338,7 @@
                 category: "music",
                 todoMsg: "Mix EQ vocal matching the beat!",
                 doneMsg: "VOCALS SATISFACTORILY MIXED!",
-                checked: false,
-                lastCheckedDate: null
+                checked: false
             },
             {
                 id: 2,
@@ -370,26 +347,11 @@
                 category: "health",
                 todoMsg: "Drink at least 2L of Water!",
                 doneMsg: "OPTIMAL HYDRATION ACHIEVED!",
-                checked: true,
-                lastCheckedDate: new Date().toDateString()
+                checked: false
             }
         ];
 
-        function checkDailyReset() {
-            const today = new Date().toDateString();
-            if (currentTrackingDate !== today) {
-                currentTrackingDate = today;
-                habits.forEach(h => {
-                    if (h.lastCheckedDate !== today) {
-                        h.checked = false;
-                    }
-                });
-                renderHabits();
-            }
-        }
-
         function renderHabits() {
-            checkDailyReset();
             const list = document.getElementById('habits-list');
             list.innerHTML = '';
 
@@ -399,14 +361,17 @@
                 block.id = `block-${habit.id}`;
                 block.setAttribute('onclick', `toggleCheck(${habit.id}, event)`);
 
+                // ถ้าทำเสร็จแล้ว (checked) ให้สลับการแสดงผลไอคอนเป็นพลุ 🎇 ทันทีตามสั่งครับ
+                const activeIcon = habit.checked ? "🎇" : habit.icon;
+
                 block.innerHTML = `
                     <div class="fill-layer"></div>
                     <div class="action-overlay" onclick="event.stopPropagation();">
                         <button class="action-btn" onclick="loadIntoEditor(${habit.id})">Edit</button>
-                        <button class="action-btn" style="background:#cc3333;" onclick="deleteHabit(${habit.id})">Del</button>
+                        <button class="action-btn" style="background:#b32424;" onclick="deleteHabit(${habit.id})">Del</button>
                     </div>
                     <div class="habit-content">
-                        <div class="icon-box">${habit.icon}</div>
+                        <div class="icon-box">${activeIcon}</div>
                         <div class="info-box">
                             <div class="habit-title-row">
                                 <span class="habit-name">${habit.name}</span>
@@ -429,50 +394,45 @@
             const habit = habits.find(h => h.id === id);
             if (habit) {
                 habit.checked = !habit.checked;
-                habit.lastCheckedDate = habit.checked ? new Date().toDateString() : null;
-                
                 renderHabits();
 
-                // Trigger mini firework particle explosion if successfully completed
                 if (habit.checked && event) {
                     const blockEl = document.getElementById(`block-${id}`);
-                    createExplosion(blockEl, event.clientX, event.clientY);
+                    triggerNotionSparks(blockEl, event.clientX, event.clientY);
                 }
             }
         }
 
-        // Particle System Engine (Mini Fireworks Effect)
-        function createExplosion(element, clickX, clickY) {
+        function triggerNotionSparks(element, cx, cy) {
             const rect = element.getBoundingClientRect();
-            // Fallback coordinate positioning relative to element if click outside scope
-            const originX = clickX ? (clickX - rect.left) : (rect.width / 2);
-            const originY = clickY ? (clickY - rect.top) : (rect.height / 2);
+            const x = cx ? (cx - rect.left) : (rect.width / 2);
+            const y = cy ? (cy - rect.top) : (rect.height / 2);
+            const colors = ['#ffffff', '#ffeb3b', '#ff5722', '#4caf50'];
 
-            for (let i = 0; i < 16; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                // Pick soft glowing colors matching light explosion
-                particle.style.background = i % 2 === 0 ? '#ffffff' : '#ffeb3b'; 
-                element.appendChild(particle);
+            for (let i = 0; i < 20; i++) {
+                const sp = document.createElement('div');
+                sp.className = 'sparkle';
+                sp.style.background = colors[Math.floor(Math.random() * colors.length)];
+                element.appendChild(sp);
 
-                particle.style.left = `${originX}px`;
-                particle.style.top = `${originY}px`;
+                sp.style.left = `${x}px`;
+                sp.style.top = `${y}px`;
 
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = 40 + Math.random() * 60;
-                const destinationX = Math.cos(angle) * velocity;
-                const destinationY = Math.sin(angle) * velocity;
+                const a = Math.random() * Math.PI * 2;
+                const v = 30 + Math.random() * 50;
+                const dx = Math.cos(a) * v;
+                const dy = Math.sin(a) * v;
 
-                particle.animate([
-                    { opacity: 1, transform: 'translate(0, 0) scale(1)' },
-                    { opacity: 0, transform: `translate(${destinationX}px, ${destinationY}px) scale(0.2)` }
+                sp.animate([
+                    { opacity: 1, transform: 'translate(0, 0) scale(1.2)' },
+                    { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(0.1)` }
                 ], {
-                    duration: 600 + Math.random() * 400,
-                    easing: 'cubic-bezier(0.1, 0.8, 0.3, 1)',
+                    duration: 500 + Math.random() * 300,
+                    easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)',
                     fill: 'forwards'
                 });
 
-                setTimeout(() => particle.remove(), 1000);
+                setTimeout(() => sp.remove(), 900);
             }
         }
 
@@ -497,10 +457,10 @@
         function saveHabit() {
             const id = document.getElementById('edit-id').value;
             const icon = document.getElementById('habit-icon').value || "✨";
-            const name = document.getElementById('habit-name').value || "New Habit";
+            const name = document.getElementById('habit-name').value || "Unnamed Task";
             const category = document.getElementById('habit-category').value || "LIFE";
-            const todoMsg = document.getElementById('habit-todo-msg').value || "Do it now!";
-            const doneMsg = document.getElementById('habit-done-msg').value || "COMPLETED!";
+            const todoMsg = document.getElementById('habit-todo-msg').value || "Action required!";
+            const doneMsg = document.getElementById('habit-done-msg').value || "FINISHED!";
 
             if (id) {
                 const habit = habits.find(h => h.id == id);
@@ -519,8 +479,7 @@
                     category: category,
                     todoMsg: todoMsg,
                     doneMsg: doneMsg,
-                    checked: false,
-                    lastCheckedDate: null
+                    checked: false
                 });
             }
             renderHabits();
@@ -537,10 +496,8 @@
         function resetEditor() {
             document.getElementById('edit-id').value = '';
             document.getElementById('habit-name').value = '';
-            document.getElementById('habit-todo-msg').value = '';
         }
 
-        setInterval(checkDailyReset, 60000);
         renderHabits();
     </script>
 </body>
