@@ -1,430 +1,485 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Palace's RPG Save Stopwatch</title>
-  <style>
-    body {
-      background-color: transparent;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-      padding: 20px 0;
-      box-sizing: border-box;
-    }
-    .widget-container {
-      position: relative; /* For Overlay Alert positioning */
-      background: #FDF3F2; /* Creamy pastel */
-      border: 2px solid #8B0016; /* Deep Burgundy Crimson */
-      border-radius: 20px;
-      padding: 24px;
-      width: 280px;
-      text-align: center;
-      box-shadow: 4px 4px 0px #8B0016; /* Retro 2D Shadow */
-      color: #8B0016;
-      box-sizing: border-box;
-      overflow: hidden; /* Keep modal within rounded corners */
-    }
-    /* Editable Title Styled like a clean input */
-    .title-input {
-      background: transparent;
-      border: none;
-      border-bottom: 2px dashed #8b001680;
-      color: #8B0016;
-      font-size: 0.85rem;
-      font-weight: 800;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      width: 90%;
-      margin-bottom: 10px;
-      outline: none;
-      padding: 4px 0;
-      transition: border-color 0.2s;
-    }
-    .title-input:focus {
-      border-bottom-color: #8B0016;
-    }
-    .timer-display {
-      font-size: 3rem;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
-      margin: 5px 0 20px 0;
-      letter-spacing: 1px;
-      color: #8B0016;
-    }
-    .control-buttons {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .btn {
-      background-color: #ffffff;
-      color: #8B0016;
-      border: 2px solid #8B0016;
-      border-radius: 12px;
-      padding: 10px;
-      font-size: 0.85rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      cursor: pointer;
-      flex: 1;
-      transition: all 0.2s ease;
-      box-shadow: 2px 2px 0px #8B0016;
-    }
-    .btn:hover {
-      transform: translate(-1px, -1px);
-      box-shadow: 3px 3px 0px #8B0016;
-    }
-    .btn:active {
-      transform: translate(1px, 1px);
-      box-shadow: 1px 1px 0px #8B0016;
-    }
-    .btn-start {
-      background-color: #8B0016;
-      color: #FDF3F2;
-      border: 2px solid #8B0016;
-    }
-    .btn-start:hover {
-      background-color: #a31226;
-    }
-    .save-button {
-      background-color: #f1dbda;
-      color: #b07c7c;
-      border: 2px solid #b07c7c;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 0.85rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      cursor: not-allowed;
-      width: 100%;
-      box-sizing: border-box;
-      transition: all 0.3s ease;
-    }
-    .save-button.active {
-      background-color: #8B0016;
-      color: #FDF3F2;
-      border: 2px solid #8B0016;
-      box-shadow: 2px 2px 0px #3c0006;
-      cursor: pointer;
-    }
-    .save-button.active:hover {
-      background-color: #a31226;
-      transform: translateY(-1px);
-    }
-    
-    /* Save Game List Section */
-    .save-list-section {
-      margin-top: 20px;
-      border-top: 2px dashed #8b001640;
-      padding-top: 15px;
-      text-align: left;
-    }
-    .save-list-title {
-      font-size: 0.75rem;
-      font-weight: bold;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 5px;
-      color: #8B0016;
-      text-align: center;
-      cursor: pointer;
-      user-select: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-    }
-    .save-list-title::after {
-      content: '▲';
-      font-size: 0.6rem;
-      transition: transform 0.3s ease;
-    }
-    .save-list-section.collapsed .save-list-title::after {
-      transform: rotate(180deg);
-    }
-    .save-list-container {
-      max-height: 150px;
-      overflow-y: auto;
-      transition: max-height 0.3s ease, opacity 0.3s ease;
-      opacity: 1;
-    }
-    .save-list-section.collapsed .save-list-container {
-      max-height: 0px;
-      opacity: 0;
-      overflow: hidden;
-    }
-    .save-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    /* Custom thin scrollbar for minimalist look */
-    .save-list-container::-webkit-scrollbar {
-      width: 4px;
-    }
-    .save-list-container::-webkit-scrollbar-thumb {
-      background: #8B0016;
-      border-radius: 4px;
-    }
-    .save-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #ffffff;
-      border: 1.5px solid #8B0016;
-      border-radius: 10px;
-      padding: 8px 10px;
-      margin-bottom: 8px;
-      box-shadow: 2px 2px 0px #8B0016;
-    }
-    .save-info {
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      margin-right: 8px;
-    }
-    .save-name-container {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .save-name {
-      font-size: 0.8rem;
-      font-weight: bold;
-      color: #8B0016;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      cursor: pointer;
-      border: 1px solid transparent;
-      padding: 1px 3px;
-      border-radius: 4px;
-    }
-    .save-name:hover {
-      background: #f1dbda40;
-      border-color: #8b001630;
-    }
-    .save-name-input {
-      font-size: 0.8rem;
-      font-weight: bold;
-      color: #8B0016;
-      border: 1px solid #8B0016;
-      background: #FDF3F2;
-      border-radius: 4px;
-      padding: 1px 3px;
-      width: 90%;
-      outline: none;
-    }
-    .edit-icon {
-      font-size: 0.65rem;
-      opacity: 0.4;
-      cursor: pointer;
-    }
-    .edit-icon:hover {
-      opacity: 1;
-    }
-    .save-time {
-      font-size: 0.7rem;
-      color: #8b0016a0;
-      padding-left: 3px;
-    }
-    .save-actions {
-      display: flex;
-      gap: 5px;
-    }
-    .action-btn {
-      background: #ffffff;
-      border: 1.5px solid #8B0016;
-      border-radius: 6px;
-      color: #8B0016;
-      font-size: 0.7rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      cursor: pointer;
-      padding: 3px 6px;
-      transition: all 0.2s;
-    }
-    .action-btn:hover {
-      background: #8B0016;
-      color: #FDF3F2;
-    }
-    .btn-delete {
-      border-color: #999;
-      color: #999;
-    }
-    .btn-delete:hover {
-      background: #e0e0e0;
-      color: #333;
-      border-color: #333;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palace's RPG Save Stopwatch</title>
+<style>
+/* --- WIDGET GLOBAL SIZE CONFIG ---
+  ใช้ CSS Variables ควบคุมขนาดทั้งหมดผ่านการเปลี่ยนค่า --widget-scale 
+*/
+:root {
+    --widget-scale: 1.0; /* ค่าเริ่มต้นคือ 1.0 (ปรับเพิ่ม/ลดได้จากหน้าจอหน้าเว็บเลย) */
+}
 
-    /* CUSTOM IN-WIDGET MODAL DIALOG */
-    .custom-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(139, 0, 22, 0.4); /* Burgundy backdrop tint */
-      backdrop-filter: blur(2px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-    }
-    .custom-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .custom-modal {
-      background: #FDF3F2;
-      border: 2px solid #8B0016;
-      border-radius: 16px;
-      padding: 18px;
-      width: 80%;
-      box-shadow: 4px 4px 0px #3c0006;
-      transform: scale(0.9);
-      transition: transform 0.25s ease;
-    }
-    .custom-overlay.active .custom-modal {
-      transform: scale(1);
-    }
-    .modal-title {
-      font-size: 0.75rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      color: #8B0016;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    .modal-msg {
-      font-size: 0.78rem;
-      line-height: 1.4;
-      color: #8b0016cf;
-      margin-bottom: 15px;
-    }
-    .modal-buttons {
-      display: flex;
-      gap: 10px;
-    }
-    .modal-btn {
-      flex: 1;
-      padding: 8px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      border: 1.5px solid #8B0016;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .modal-btn-confirm {
-      background: #8B0016;
-      color: #FDF3F2;
-    }
-    .modal-btn-confirm:hover {
-      background: #a31226;
-    }
-    .modal-btn-cancel {
-      background: #ffffff;
-      color: #8B0016;
-    }
-    .modal-btn-cancel:hover {
-      background: #f1dbda;
-    }
-  </style>
+body {
+    background-color: transparent;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    padding: 20px 0;
+    box-sizing: border-box;
+    position: relative;
+    /* คำนวณขนาด Font ตัวแม่ ถ้าเปลี่ยนตรงนี้ ทุกอย่างที่เป็นหน่วย em จะเปลี่ยนตามหมด */
+    font-size: calc(16px * var(--widget-scale)); 
+}
+.widget-container {
+    background: #FDF3F2; /* Creamy pastel */
+    border: 0.125em solid #8B0016; /* Deep Burgundy Crimson */
+    border-radius: 1.25em;
+    padding: 1.5em;
+    width: 17.5em; /* ปรับเป็นหน่วย em เพื่อให้ขยายตามขนาดฟอนต์ */
+    text-align: center;
+    box-shadow: 0.25em 0.25em 0px #8B0016; /* Retro 2D Shadow ยืดหยุ่นตามขนาด */
+    color: #8B0016;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* หัวข้อและโซนปรับขนาดแอป */
+.header-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25em;
+    margin-bottom: 0.6em;
+}
+.title-input {
+    background: transparent;
+    border: none;
+    border-bottom: 0.125em dashed #8b001680;
+    color: #8B0016;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    width: 90%;
+    outline: none;
+    padding: 0.25em 0;
+    transition: border-color 0.2s;
+}
+.title-input:focus {
+    border-bottom-color: #8B0016;
+}
+
+/* แถบควบคุมขนาดแบบไม่ต้องแก้โค้ด */
+.size-control-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3em;
+    font-size: 0.65rem;
+    font-weight: bold;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.size-control-container:hover {
+    opacity: 1;
+}
+.size-select {
+    background: #ffffff;
+    border: 1px solid #8B0016;
+    border-radius: 4px;
+    color: #8B0016;
+    font-size: 0.65rem;
+    font-weight: bold;
+    cursor: pointer;
+    outline: none;
+    padding: 1px 2px;
+}
+
+.timer-display {
+    font-size: 3rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    margin: 0.3em 0 0.6em 0;
+    letter-spacing: 1px;
+    color: #8B0016;
+}
+.control-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6em;
+    margin-bottom: 1em;
+}
+.btn {
+    background-color: #ffffff;
+    color: #8B0016;
+    border: 0.125em solid #8B0016;
+    border-radius: 0.75em;
+    padding: 0.6em;
+    font-size: 0.82rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    flex: 1;
+    transition: all 0.2s ease;
+    box-shadow: 0.125em 0.125em 0px #8B0016;
+}
+.btn:hover {
+    transform: translate(-0.06em, -0.06em);
+    box-shadow: 0.187em 0.187em 0px #8B0016;
+}
+.btn:active {
+    transform: translate(0.06em, 0.06em);
+    box-shadow: 0.06em 0.06em 0px #8B0016;
+}
+.btn-start {
+    background-color: #8B0016;
+    color: #FDF3F2;
+    border: 0.125em solid #8B0016;
+}
+.btn-start:hover {
+    background-color: #a31226;
+}
+.save-button {
+    background-color: #f1dbda;
+    color: #b07c7c;
+    border: 0.125em solid #b07c7c;
+    border-radius: 0.75em;
+    padding: 0.75em;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: not-allowed;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+.save-button.active {
+    background-color: #8B0016;
+    color: #FDF3F2;
+    border: 0.125em solid #8B0016;
+    box-shadow: 0.125em 0.125em 0px #3c0006;
+    cursor: pointer;
+}
+.save-button.active:hover {
+    background-color: #a31226;
+    transform: translateY(-0.06em);
+}
+
+/* Save Game List Section */
+.save-list-section {
+    margin-top: 1.25em;
+    border-top: 0.125em dashed #8b001640;
+    padding-top: 0.9em;
+    text-align: left;
+}
+.save-list-title {
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 0.3em;
+    color: #8B0016;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.375em;
+}
+.save-list-title::after {
+    content: '▲';
+    font-size: 0.6rem;
+    transition: transform 0.3s ease;
+}
+.save-list-section.collapsed .save-list-title::after {
+    transform: rotate(180deg);
+}
+.save-list-container {
+    max-height: 9.375em;
+    overflow-y: auto;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+.save-list-section.collapsed .save-list-container {
+    max-height: 0px;
+    opacity: 0;
+    overflow: hidden;
+}
+.save-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.save-list-container::-webkit-scrollbar {
+    width: 4px;
+}
+.save-list-container::-webkit-scrollbar-thumb {
+    background: #8B0016;
+    border-radius: 4px;
+}
+.save-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    border: 0.09em solid #8B0016;
+    border-radius: 0.625em;
+    padding: 0.5em 0.625em;
+    margin-bottom: 0.5em;
+    box-shadow: 0.125em 0.125em 0px #8B0016;
+}
+.save-info {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-right: 0.5em;
+}
+.save-name-container {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+}
+.save-name {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #8B0016;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1px solid transparent;
+    padding: 1px 3px;
+    border-radius: 4px;
+}
+.save-name:hover {
+    background: #f1dbda40;
+    border-color: #8b001630;
+}
+.save-name-input {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #8B0016;
+    border: 1px solid #8B0016;
+    background: #FDF3F2;
+    border-radius: 4px;
+    padding: 1px 3px;
+    width: 90%;
+    outline: none;
+}
+.edit-icon {
+    font-size: 0.65rem;
+    opacity: 0.4;
+    cursor: pointer;
+}
+.edit-icon:hover {
+    opacity: 1;
+}
+.save-time {
+    font-size: 0.7rem;
+    color: #8b0016a0;
+    padding-left: 3px;
+}
+.save-actions {
+    display: flex;
+    gap: 0.3em;
+}
+.action-btn {
+    background: #ffffff;
+    border: 0.09em solid #8B0016;
+    border-radius: 0.375em;
+    color: #8B0016;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0.2em 0.4em;
+    transition: all 0.2s;
+}
+.action-btn:hover {
+    background: #8B0016;
+    color: #FDF3F2;
+}
+.btn-delete {
+    border-color: #999;
+    color: #999;
+}
+.btn-delete:hover {
+    background: #e0e0e0;
+    color: #333;
+    border-color: #333;
+}
+
+/* Custom Modal */
+.custom-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(139, 0, 22, 0.25);
+    border-radius: 1.25em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.custom-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.custom-modal {
+    background: #FDF3F2;
+    border: 0.125em solid #8B0016;
+    border-radius: 1em;
+    padding: 1em;
+    width: 85%;
+    box-shadow: 0.25em 0.25em 0px #8B0016;
+    text-align: center;
+    box-sizing: border-box;
+    animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.modal-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 0.5em;
+    color: #8B0016;
+    text-transform: uppercase;
+}
+.modal-text {
+    font-size: 0.78rem;
+    line-height: 1.4;
+    margin-bottom: 1em;
+    color: #8B0016;
+}
+.modal-buttons {
+    display: flex;
+    gap: 0.5em;
+}
+.modal-btn {
+    flex: 1;
+    padding: 0.5em;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border-radius: 0.5em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 0.125em solid #8B0016;
+    transition: all 0.1s;
+}
+.modal-btn-confirm {
+    background: #8B0016;
+    color: #FDF3F2;
+}
+.modal-btn-confirm:hover {
+    background: #a31226;
+}
+.modal-btn-cancel {
+    background: #ffffff;
+    color: #8B0016;
+}
+.modal-btn-cancel:hover {
+    background: #f1dbda;
+}
+</style>
 </head>
 <body>
 
 <div class="widget-container">
-  <!-- Editable Title Box -->
-  <input type="text" id="titleInput" class="title-input" value="Focus Session" placeholder="ENTER SESSION NAME">
-  
-  <div class="timer-display" id="display">00:00:00</div>
-  
-  <div class="control-buttons">
-    <button class="btn btn-start" id="startBtn" onclick="startTimer()">Start</button>
-    <button class="btn" id="pauseBtn" onclick="pauseTimer()" style="display:none;">Pause</button>
-    <button class="btn" id="resetBtn" onclick="resetTimer()">Reset</button>
-  </div>
-  
-  <button class="save-button" id="saveBtn" onclick="saveGame()" disabled>Record Progress</button>
-
-  <!-- Saved Game Files (List) - Collapsed by Default -->
-  <div class="save-list-section collapsed" id="saveListSection">
-    <div class="save-list-title" id="saveListToggle" onclick="toggleSaveList()">💾 Saved Files</div>
-    <div class="save-list-container">
-      <ul class="save-list" id="saveList">
-        <!-- Save slots will be injected here -->
-      </ul>
+    <div class="header-zone">
+        <input type="text" id="titleInput" class="title-input" value="Focus Session" placeholder="ENTER SESSION NAME">
+        
+        <div class="size-control-container">
+            <span>Size:</span>
+            <select id="sizeSelect" class="size-select" onchange="changeWidgetSize(this.value)">
+                <option value="0.8">Small (80%)</option>
+                <option value="1.0" selected>Normal (100%)</option>
+                <option value="1.2">Large (120%)</option>
+                <option value="1.4">Extra (140%)</option>
+            </select>
+        </div>
     </div>
-  </div>
 
-  <!-- Custom Retro Modal Alert Overlay -->
-  <div class="custom-overlay" id="customAlertOverlay">
-    <div class="custom-modal">
-      <div class="modal-title">⚠️ Name Duplicate</div>
-      <div class="modal-msg" id="modalMsg">A record with this name already exists. Overwrite?</div>
-      <div class="modal-buttons">
-        <button class="modal-btn modal-btn-confirm" id="btnConfirmOverwrite">Overwrite</button>
-        <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
-      </div>
+    <div class="timer-display" id="display">00:00:00</div>
+
+    <div class="control-buttons">
+        <button class="btn btn-start" id="startBtn" onclick="startTimer()">Start</button>
+        <button class="btn" id="pauseBtn" onclick="pauseTimer()" style="display:none;">Pause</button>
+        <button class="btn" id="resetBtn" onclick="resetTimer()">Reset</button>
     </div>
-  </div>
+
+    <button class="save-button" id="saveBtn" onclick="saveGame()">Record Progress</button>
+
+    <div class="save-list-section" id="saveListSection">
+        <div class="save-list-title" id="saveListToggle" onclick="toggleSaveList()">💾 Saved Files</div>
+        <div class="save-list-container">
+            <ul class="save-list" id="saveList">
+            </ul>
+        </div>
+    </div>
+
+    <div class="custom-modal-overlay" id="customModal">
+        <div class="custom-modal">
+            <div class="modal-title">⚠️ Overwrite Warning</div>
+            <div class="modal-text" id="modalText">A record named "Session" already exists. Overwrite with new progress?</div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-confirm" id="modalConfirmBtn">Overwrite</button>
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-  let startTime = 0;
-  let elapsedTime = 0;
-  let timerInterval;
-  let isRunning = false;
-  let pendingSaveObject = null; // Holds save info temporarily for the custom modal decision
+let startTime = 0;
+let elapsedTime = 0;
+let timerInterval;
+let isRunning = false;
+let pendingOverwriteIndex = null;
 
-  const display = document.getElementById('display');
-  const startBtn = document.getElementById('startBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  const saveBtn = document.getElementById('saveBtn');
-  const titleInput = document.getElementById('titleInput');
-  const saveList = document.getElementById('saveList');
-  const saveListSection = document.getElementById('saveListSection');
-  const alertOverlay = document.getElementById('customAlertOverlay');
-  const modalMsg = document.getElementById('modalMsg');
-  const btnConfirmOverwrite = document.getElementById('btnConfirmOverwrite');
+const display = document.getElementById('display');
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const saveBtn = document.getElementById('saveBtn');
+const titleInput = document.getElementById('titleInput');
+const saveList = document.getElementById('saveList');
+const saveListSection = document.getElementById('saveListSection');
+const customModal = document.getElementById('customModal');
+const modalText = document.getElementById('modalText');
+const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+const sizeSelect = document.getElementById('sizeSelect');
 
-  // Load saves and collapse state from LocalStorage on start
-  let savedGames = JSON.parse(localStorage.getItem('palace_stopwatch_saves')) || [];
-  
-  // Custom default behavior: Set to "collapsed" by default unless explicitly saved otherwise
-  let isCollapsed = localStorage.getItem('palace_stopwatch_collapsed') !== null 
-    ? JSON.parse(localStorage.getItem('palace_stopwatch_collapsed')) 
-    : true; // Default to true (collapsed) on fresh start
-  
-  if (isCollapsed) {
-    saveListSection.classList.add('collapsed');
-  } else {
-    saveListSection.classList.remove('collapsed');
-  }
-  renderSaves();
+// Load saves & size preference from LocalStorage
+let savedGames = JSON.parse(localStorage.getItem('palace_stopwatch_saves')) || [];
+let savedSize = localStorage.getItem('palace_stopwatch_size') || "1.0";
 
-  function timeToString(time) {
+// ทำการ Render ขนาดที่เคยตั้งไว้ล่าสุด
+sizeSelect.value = savedSize;
+changeWidgetSize(savedSize);
+
+saveListSection.classList.add('collapsed');
+renderSaves();
+
+// ฟังก์ชันปรับขนาด Widget แบบ Real-time
+function changeWidgetSize(scaleValue) {
+    document.documentElement.style.setProperty('--widget-scale', scaleValue);
+    localStorage.setItem('palace_stopwatch_size', scaleValue);
+}
+
+function timeToString(time) {
     let diffInHrs = time / 3600000;
     let hh = Math.floor(diffInHrs);
-
     let diffInMin = (diffInHrs - hh) * 60;
     let mm = Math.floor(diffInMin);
-
     let diffInSec = (diffInMin - mm) * 60;
     let ss = Math.floor(diffInSec);
 
@@ -433,25 +488,24 @@
     let formattedSS = ss.toString().padStart(2, "0");
 
     return `${formattedHH}:${formattedMM}:${formattedSS}`;
-  }
+}
 
-  function startTimer() {
+function startTimer() {
     if (isRunning) return;
     isRunning = true;
     startTime = Date.now() - elapsedTime;
     timerInterval = setInterval(function printTime() {
-      elapsedTime = Date.now() - startTime;
-      display.innerHTML = timeToString(elapsedTime);
+        elapsedTime = Date.now() - startTime;
+        display.innerHTML = timeToString(elapsedTime);
     }, 1000);
 
     startBtn.style.display = "none";
     pauseBtn.style.display = "block";
-    
     saveBtn.classList.remove('active');
     saveBtn.disabled = true;
-  }
+}
 
-  function pauseTimer() {
+function pauseTimer() {
     clearInterval(timerInterval);
     isRunning = false;
     startBtn.style.display = "block";
@@ -459,12 +513,12 @@
     pauseBtn.style.display = "none";
 
     if (elapsedTime > 0) {
-      saveBtn.classList.add('active');
-      saveBtn.disabled = false;
+        saveBtn.classList.add('active');
+        saveBtn.disabled = false;
     }
-  }
+}
 
-  function resetTimer() {
+function resetTimer() {
     clearInterval(timerInterval);
     isRunning = false;
     elapsedTime = 0;
@@ -472,87 +526,69 @@
     startBtn.style.display = "block";
     startBtn.innerHTML = "Start";
     pauseBtn.style.display = "none";
-
     saveBtn.classList.remove('active');
     saveBtn.disabled = true;
-  }
+}
 
-  // Toggle Collapse / Expand List
-  function toggleSaveList() {
+function toggleSaveList() {
     saveListSection.classList.toggle('collapsed');
-    localStorage.setItem('palace_stopwatch_collapsed', saveListSection.classList.contains('collapsed'));
-  }
+}
 
-  // --- OVERLAY MODAL ACTIONS ---
-  function openModal(sessionName) {
-    modalMsg.innerHTML = `"${sessionName}" already exists.<br>Do you want to overwrite it with your new progress?`;
-    alertOverlay.classList.add('active');
-  }
+function openModal(sessionName, index) {
+    modalText.innerHTML = `A record named <strong>"${sessionName}"</strong> already exists.<br><br>Press Overwrite to update progress, or Cancel to rename.`;
+    pendingOverwriteIndex = index;
+    customModal.classList.add('active');
+}
 
-  function closeModal() {
-    alertOverlay.classList.remove('active');
-    pendingSaveObject = null;
-  }
+function closeModal() {
+    customModal.classList.remove('active');
+    pendingOverwriteIndex = null;
+}
 
-  function executeOverwrite() {
-    if (!pendingSaveObject) return;
+modalConfirmBtn.onclick = function() {
+    if (pendingOverwriteIndex !== null) {
+        const durationString = timeToString(elapsedTime);
+        savedGames[pendingOverwriteIndex].timeStr = durationString;
+        savedGames[pendingOverwriteIndex].ms = elapsedTime;
+        savedGames[pendingOverwriteIndex].date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-    const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === pendingSaveObject.title.toLowerCase());
-    
-    if (existingIndex !== -1) {
-      savedGames[existingIndex].timeStr = pendingSaveObject.timeStr;
-      savedGames[existingIndex].ms = pendingSaveObject.ms;
-      savedGames[existingIndex].date = pendingSaveObject.date;
-
-      localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
-      renderSaves();
-      resetTimer();
-      sendToNotionDatabase(savedGames[existingIndex]);
+        localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+        renderSaves();
+        sendToNotionDatabase(savedGames[pendingOverwriteIndex]);
+        resetTimer();
+        closeModal();
     }
-    closeModal();
-  }
+};
 
-  // Set event listener for confirm modal
-  btnConfirmOverwrite.addEventListener('click', executeOverwrite);
-
-
-  // --- SAVE GAME SYSTEM WITH IN-WIDGET WARNING ---
-  function saveGame() {
+function saveGame() {
     if (elapsedTime === 0 || isRunning) return;
 
     const sessionName = titleInput.value.trim() || "Untitled Session";
     const durationString = timeToString(elapsedTime);
     const saveId = Date.now();
-
-    const preparedSave = {
-      title: sessionName,
-      timeStr: durationString,
-      ms: elapsedTime,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    };
-
-    // Check for duplicate names
     const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === sessionName.toLowerCase());
 
     if (existingIndex !== -1) {
-      // Trigger the Custom Modal rather than standard browser prompt
-      pendingSaveObject = preparedSave;
-      openModal(sessionName);
-      return;
+        openModal(sessionName, existingIndex);
+        return; 
     }
 
-    // Save as brand new if no duplicate
-    preparedSave.id = saveId;
-    savedGames.unshift(preparedSave);
+    const newSave = {
+        id: saveId,
+        title: sessionName,
+        timeStr: durationString,
+        ms: elapsedTime,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    };
+
+    savedGames.unshift(newSave);
     localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
-
     renderSaves();
+    sendToNotionDatabase(newSave);
     resetTimer();
-    sendToNotionDatabase(preparedSave);
-  }
+}
 
-  // --- EDIT SAVE NAME ON THE FLY ---
-  function enableNameEdit(id) {
+function enableNameEdit(id) {
     const nameSpan = document.getElementById(`name-${id}`);
     const editIcon = document.getElementById(`edit-icon-${id}`);
     if (!nameSpan) return;
@@ -564,65 +600,60 @@
     input.value = currentName;
 
     if (editIcon) editIcon.style.display = 'none';
-
     nameSpan.replaceWith(input);
     input.focus();
     input.select();
 
     const saveNewName = () => {
-      const newName = input.value.trim() || "Untitled Session";
-      const gameIndex = savedGames.findIndex(g => g.id === id);
-      if (gameIndex !== -1) {
-        savedGames[gameIndex].title = newName;
-        localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
-      }
-      renderSaves();
+        const newName = input.value.trim() || "Untitled Session";
+        const gameIndex = savedGames.findIndex(g => g.id === id);
+        if (gameIndex !== -1) {
+            savedGames[gameIndex].title = newName;
+            localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+        }
+        renderSaves();
     };
 
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') saveNewName();
-      if (e.key === 'Escape') renderSaves();
+        if (e.key === 'Enter') saveNewName();
+        if (e.key === 'Escape') renderSaves();
     });
-
     input.addEventListener('blur', saveNewName);
-  }
+}
 
-  function renderSaves() {
+function renderSaves() {
     saveList.innerHTML = '';
-    
     if (savedGames.length === 0) {
-      saveList.innerHTML = '<li style="text-align:center; font-size:0.75rem; color:#8b001680; padding: 10px;">No records established.</li>';
-      return;
+        saveList.innerHTML = '<li style="text-align:center; font-size:0.75rem; color:#8b001680; padding: 10px;">No records established.</li>';
+        return;
     }
 
     savedGames.forEach(game => {
-      const li = document.createElement('li');
-      li.className = 'save-item';
-      li.innerHTML = `
+        const li = document.createElement('li');
+        li.className = 'save-item';
+        li.innerHTML = `
         <div class="save-info">
-          <div class="save-name-container">
-            <span class="save-name" id="name-${game.id}" onclick="enableNameEdit(${game.id})" title="Click to rename">${game.title}</span>
-            <span class="edit-icon" id="edit-icon-${game.id}" onclick="enableNameEdit(${game.id})">✏️</span>
-          </div>
-          <span class="save-time">${game.timeStr} (${game.date})</span>
+            <div class="save-name-container">
+                <span class="save-name" id="name-${game.id}" onclick="enableNameEdit(${game.id})" title="Click to rename">${game.title}</span>
+                <span class="edit-icon" id="edit-icon-${game.id}" onclick="enableNameEdit(${game.id})">✏️</span>
+            </div>
+            <span class="save-time">${game.timeStr} (${game.date})</span>
         </div>
         <div class="save-actions">
-          <button class="action-btn" onclick="loadGame(${game.id})">Load</button>
-          <button class="action-btn btn-delete" onclick="deleteGame(${game.id})">✕</button>
+            <button class="action-btn" onclick="loadGame(${game.id})">Load</button>
+            <button class="action-btn btn-delete" onclick="deleteGame(${game.id})">✕</button>
         </div>
-      `;
-      saveList.appendChild(li);
+        `;
+        saveList.appendChild(li);
     });
-  }
+}
 
-  // --- LOAD GAME SYSTEM ---
-  function loadGame(id) {
+function loadGame(id) {
     const targetGame = savedGames.find(g => g.id === id);
     if (!targetGame) return;
 
     clearInterval(timerInterval);
     isRunning = false;
-
     elapsedTime = targetGame.ms;
     display.innerHTML = targetGame.timeStr;
     titleInput.value = targetGame.title;
@@ -630,36 +661,33 @@
     startBtn.style.display = "block";
     startBtn.innerHTML = "Resume";
     pauseBtn.style.display = "none";
-    
     saveBtn.classList.add('active');
     saveBtn.disabled = false;
-  }
+}
 
-  function deleteGame(id) {
-    // Standard prompt is OK here, but we can also safely use it or proceed.
+function deleteGame(id) {
     if (confirm("Delete this record permanently?")) {
-      savedGames = savedGames.filter(g => g.id !== id);
-      localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
-      renderSaves();
+        savedGames = savedGames.filter(g => g.id !== id);
+        localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+        renderSaves();
     }
-  }
+}
 
-  // --- WEBHOOK TO NOTION (OPTIONAL) ---
-  function sendToNotionDatabase(saveData) {
+function sendToNotionDatabase(saveData) {
     const webhookUrl = 'YOUR_WEBHOOK_URL_HERE';
     if (webhookUrl === 'YOUR_WEBHOOK_URL_HERE') return;
 
     fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        task: saveData.title,
-        duration: saveData.timeStr,
-        minutes: Math.round(saveData.ms / 60000),
-        date: new Date().toISOString().split('T')[0]
-      })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            task: saveData.title,
+            duration: saveData.timeStr,
+            minutes: Math.round(saveData.ms / 60000),
+            date: new Date().toISOString().split('T')[0]
+        })
     }).catch(err => console.error('Database Sync Error:', err));
-  }
+}
 </script>
 
 </body>
