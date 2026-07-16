@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palace Premium Notion Tracker - Red Edition</title>
+    <title>Palace Red Silhouette Tracker</title>
     <style>
         :root {
             --palace-red: #9E3640;
@@ -40,13 +40,14 @@
             max-width: 550px;
         }
 
-        /* Original Minimal Luxurious Frame */
+        /* Block with Palace Red Premium Shadow */
         .habit-block {
             width: 100%;
             height: 130px;
             background: var(--bg-cream);
             border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            /* เปลี่ยนเงาเป็นสีแดง Palace Red ฟุ้งๆ ดูพรีเมียม */
+            box-shadow: 0 4px 24px rgba(158, 54, 64, 0.12);
             position: relative;
             display: flex;
             align-items: center;
@@ -58,7 +59,7 @@
 
         .habit-block:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 32px rgba(158, 54, 64, 0.2);
         }
 
         /* Top Corner Status Light */
@@ -75,7 +76,7 @@
         }
 
         .habit-block.checked .status-dot {
-            opacity: 0; /* ซ่อนไฟแดงเมื่อทำเสร็จ */
+            opacity: 0;
         }
 
         /* Premium Fill Animation */
@@ -96,7 +97,7 @@
             clip-path: circle(120% at 90% 50%);
         }
 
-        /* Flex Layout Alignment for Notion */
+        /* Flex Structure for Notion */
         .habit-content {
             position: relative;
             z-index: 2;
@@ -121,6 +122,7 @@
             min-width: 0;
         }
 
+        /* Icon Wrapper & Magic Red Silhouette System */
         .icon-box {
             font-size: 2.4rem;
             display: flex;
@@ -128,9 +130,20 @@
             justify-content: center;
             flex-shrink: 0;
             width: 50px;
+            height: 50px;
+            overflow: hidden;
+            position: relative;
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
+        /* ย้อมสีเฉพาะไอคอนปกติ (ก่อนทำเสร็จ) ให้กลายเป็นเงาแดงล้วน */
+        .icon-silhouette {
+            position: relative;
+            left: -100px;
+            filter: drop-shadow(100px 0 0 var(--palace-red));
+        }
+
+        /* เมื่อสำเร็จแล้ว ปล่อยให้ไอคอนพลุ 🎉 แสดงสีสันดั้งเดิมตามธรรมชาติ */
         .habit-block.checked .icon-box {
             transform: scale(1.15) rotate(-5deg);
         }
@@ -161,7 +174,6 @@
             text-overflow: ellipsis;
         }
 
-        /* ปรับดีไซน์ Tag ให้มีสีแดงจางๆ ในสถานะปกติ */
         .category-badge {
             font-size: 0.6rem;
             font-weight: 800;
@@ -178,7 +190,7 @@
         .habit-block.checked .habit-name { color: rgba(255, 255, 255, 0.7); }
         .habit-block.checked .category-badge { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
 
-        /* Primary Message Text */
+        /* Message Text Display (Max 2 lines) */
         .message-text {
             font-size: 1.35rem;
             font-weight: 800;
@@ -194,7 +206,6 @@
             transition: color 0.4s ease, transform 0.4s ease;
         }
 
-        /* พาดข้อความเมื่อสำเร็จอย่างพรีเมียม */
         .habit-block.checked .message-text {
             color: rgba(255, 255, 255, 0.65);
             text-decoration: line-through;
@@ -202,7 +213,7 @@
             text-decoration-thickness: 3px;
         }
 
-        /* Custom Checkbox - เติมกรอบแดงตามบรีฟใหม่ */
+        /* Checkbox Indicator with Red Ring */
         .state-indicator {
             display: flex;
             align-items: center;
@@ -213,7 +224,7 @@
         .custom-checkbox {
             width: 28px;
             height: 28px;
-            border: 2px solid var(--palace-red); /* กรอบแดงในสถานะดั้งเดิม */
+            border: 2px solid var(--palace-red); 
             border-radius: 50%;
             background: #fff;
             display: flex;
@@ -223,7 +234,7 @@
         }
 
         .habit-block.checked .custom-checkbox {
-            border-color: #ffffff; /* เปลี่ยนเป็นสีขาวล้วนเมื่อสำเร็จ */
+            border-color: #ffffff;
             background: #ffffff;
             transform: scale(1.1);
         }
@@ -243,7 +254,7 @@
             transform: scale(1);
         }
 
-        /* Stealth action controls overlay */
+        /* Action Overlays */
         .action-overlay {
             position: absolute;
             left: 10px;
@@ -278,7 +289,7 @@
             z-index: 99;
         }
 
-        /* Stealth Config Node Anchor */
+        /* Stealth Editor Setup Button Anchor */
         .bottom-controls {
             width: 100%;
             max-width: 550px;
@@ -340,7 +351,6 @@
 
     <div class="habits-container" id="habits-list"></div>
 
-    <!-- Invisible trigger node at bottom -->
     <div class="bottom-controls">
         <button class="btn-hidden-trigger" onclick="toggleEditorPanel()"></button>
         
@@ -404,7 +414,10 @@
                 block.id = `block-${habit.id}`;
                 block.setAttribute('onclick', `toggleCheck(${habit.id}, event)`);
 
-                const finalIcon = habit.checked ? "🎉" : habit.icon;
+                // สร้างโครงสร้างสำหรับย้อมสีไอคอนเป็นเงาแดง (ยกเว้นไอคอนพลุ 🎉 จะได้สีปกติ)
+                const iconHTML = habit.checked 
+                    ? `<span>🎉</span>` 
+                    : `<span class="icon-silhouette">${habit.icon}</span>`;
 
                 block.innerHTML = `
                     <div class="fill-layer"></div>
@@ -415,7 +428,7 @@
                     </div>
                     <div class="habit-content">
                         <div class="left-core">
-                            <div class="icon-box">${finalIcon}</div>
+                            <div class="icon-box">${iconHTML}</div>
                             <div class="info-box">
                                 <div class="habit-title-row">
                                     <span class="habit-name">${habit.name}</span>
