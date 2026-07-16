@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palace Red Cinematic Tracker with Sound</title>
+    <title>Palace Red Tracker - DB Ready</title>
     <style>
         :root {
             --palace-red: #9E3640;
@@ -40,7 +40,7 @@
             max-width: 550px;
         }
 
-        /* Block Core */
+        /* Block Premium Shadow */
         .habit-block {
             width: 100%;
             height: 130px;
@@ -152,7 +152,7 @@
             min-width: 0;
         }
 
-        /* Layout ตอนยังไม่เสร็จ (ก่อนโดนสลับลื่นๆ) */
+        /* Layout ก่อนสำเร็จ */
         .uncompleted-layout {
             display: flex;
             flex-direction: column;
@@ -162,7 +162,8 @@
         }
 
         .habit-title-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: auto 1fr;
             align-items: center;
             gap: 10px;
         }
@@ -187,8 +188,7 @@
             border-radius: 20px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            flex-shrink: 0;
-            transition: background 0.5s, color 0.5s;
+            justify-self: start;
         }
 
         .message-text {
@@ -205,7 +205,7 @@
             text-overflow: ellipsis;
         }
 
-        /* 👑 Layout ตอนทำสำเร็จ (ซ่อนอยู่ข้างล่าง รอเลื่อนและจางขึ้นมาแทนอย่างนุ่มนวล) */
+        /* Layout ตอนสำเร็จ */
         .completed-layout {
             position: absolute;
             left: 0;
@@ -215,7 +215,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            transform: translateY(15px); /* เลื่อนลงไปรอข้างล่างนิดนึง */
+            transform: translateY(15px);
             opacity: 0;
             pointer-events: none;
             transition: transform 0.7s cubic-bezier(0.25, 1, 0.2, 1), opacity 0.6s ease;
@@ -236,26 +236,22 @@
             margin-top: 4px;
         }
 
-        /* State Switch: จัดการการเลื่อนสลับเลเยอร์แบบไร้รอยต่อ */
         .habit-block.checked .uncompleted-layout {
             opacity: 0;
-            transform: translateY(-15px); /* ดันข้อความเก่าจมขึ้นไปข้างบน */
+            transform: translateY(-15px);
             pointer-events: none;
         }
 
         .habit-block.checked .completed-layout {
             opacity: 1;
-            transform: translateY(0); /* เลื่อนขึ้นมากึ่งกลางพอดี */
-            transition-delay: 0.25s; /* รออนิเมชันสีแดงคลี่ตัวออกไปก่อน */
+            transform: translateY(0);
+            transition-delay: 0.25s;
         }
 
-        /* รักษา Category Badge ให้เปลี่ยนไปใช้สีขาวแมตช์ธีมสีแดง */
         .habit-block.checked .completed-layout .category-badge {
             background: rgba(255, 255, 255, 0.2);
             color: #ffffff;
-            align-self: flex-start;
         }
-
 
         /* Checkbox Design */
         .state-indicator {
@@ -300,7 +296,7 @@
             transition-delay: 0.2s;
         }
 
-        /* Editor Overlay */
+        /* Editor Overlay Settings */
         .action-overlay {
             position: absolute;
             left: 10px;
@@ -335,7 +331,6 @@
             z-index: 99;
         }
 
-        /* Settings & Controls Panel */
         .bottom-controls {
             width: 100%;
             max-width: 550px;
@@ -392,7 +387,6 @@
             outline: none;
         }
 
-        /* 🎚️ Settings Sound Slider Style */
         .sound-setting {
             border-top: 1px dashed #eee;
             padding-top: 10px;
@@ -410,7 +404,6 @@
     <div class="habits-container" id="habits-list"></div>
 
     <div class="bottom-controls">
-        <!-- คลิกปุ่มจิ๋วตรงนี้เพื่อตั้งค่า/เพิ่มข้อมูล -->
         <button class="btn-hidden-trigger" onclick="toggleEditorPanel()"></button>
         
         <div class="editor-panel" id="editor-panel">
@@ -435,12 +428,12 @@
                 <input type="text" id="habit-done-msg" value="VOCALS SATISFACTORILY MIXED!">
             </div>
             
-            <!-- 🎚️ ส่วนตั้งค่าระดับเสียงด้านล่างของแท็บตามบรีฟ -->
+            <!-- 🎚️ Sound Settings Slider -->
             <div class="editor-row sound-setting">
-                <label>🔔 Glass Vol.</label>
+                <label>🔔 Sound Vol.</label>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="range" id="sound-volume" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume(this.value)">
-                    <span id="vol-txt" style="font-size: 0.75rem; font-weight:700; color:var(--gray-sub);">50%</span>
+                    <input type="range" id="sound-volume" min="0" max="1" step="0.1" value="0.7" onchange="updateVolume(this.value)">
+                    <span id="vol-txt" style="font-size: 0.75rem; font-weight:700; color:var(--gray-sub);">70%</span>
                 </div>
             </div>
 
@@ -452,8 +445,10 @@
     </div>
 
     <script>
-        // โหลดข้อมูลระดับเสียงที่เซฟไว้ หรือตั้งเริ่มต้นที่ 0.5
-        let globalVolume = parseFloat(localStorage.getItem('habit_glass_volume')) || 0.5;
+        let globalVolume = parseFloat(localStorage.getItem('habit_sine_volume')) || 0.7;
+        
+        // 🚨 วาง URL Webhook ของคุณตรงนี้เพื่อส่งข้อมูลเข้า Database
+        const N_WEBHOOK_URL = "YOUR_WEBHOOK_URL";
 
         let habits = [
             {
@@ -476,48 +471,58 @@
             }
         ];
 
-        // 🎹 ฟังก์ชันสร้างเสียงแก้วหรูหรา (Crystal Clink) ด้วย Web Audio API
-        function playPremiumGlassSound() {
+        // 🎵 สังเคราะห์เสียง "ดึ้ง..." แบบ Pure Sine Wave ที่นุ่ม ลึก และกังวานชัดเจนกว่าเดิม
+        function playSatisfyingDongSound() {
             if (globalVolume <= 0) return;
 
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!AudioContext) return;
             const ctx = new AudioContext();
-            
-            // สร้างคลื่นเสียงหลัก 2 ย่านความถี่ที่ซ้อนกันให้เกิดมิติสะท้อนแบบแก้วเนื้อดี
             const now = ctx.currentTime;
             
-            // แก้วหลัก (เสียงสูงกังวาน)
-            const osc1 = ctx.createOscillator();
-            const gain1 = ctx.createGain();
-            osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(2350, now); // คลื่นคริสตัลสูง
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
             
-            // ตัวเสริมเสียงกระทบเป้าะเป้งตอนเริ่ม (Transient)
-            const osc2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            osc2.type = 'triangle';
-            osc2.frequency.setValueAtTime(1800, now);
-
-            // คุม Volume ผสม
-            gain1.gain.setValueAtTime(globalVolume * 0.4, now);
-            gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.6); // เสียงหางแก้วยาว
-
-            gain2.gain.setValueAtTime(globalVolume * 0.2, now);
-            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.08); // ดับไวให้เป็นฟีลดีดเป๊าะ
-
-            // ต่อระบบเข้าลำโพง
-            osc1.connect(gain1);
-            gain1.connect(ctx.destination);
+            osc.type = 'sine'; // คลื่นทรงกลมหนานุ่ม
             
-            osc2.connect(gain2);
-            gain2.connect(ctx.destination);
+            // อนิเมชันการกวาดเสียง (Pitch Slide) จากต่ำขึ้นสูงเพื่อให้เกิดเสียง "ดึ้ง"
+            osc.frequency.setValueAtTime(160, now); 
+            osc.frequency.exponentialRampToValueAtTime(320, now + 0.12); // ลอยระดับเสียงขึ้นอย่างรวดเร็ว
+            osc.frequency.setValueAtTime(320, now + 0.12);
+            
+            // ตั้งความดังให้เคลียร์และชัดเจน (ดังขึ้นตามขอ)
+            gain.gain.setValueAtTime(globalVolume * 0.75, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.85); // หางเสียงละมุน ค่อยๆ ดับ
 
-            // สั่งเริ่มทำงาน
-            osc1.start(now);
-            osc1.stop(now + 0.6);
-            osc2.start(now);
-            osc2.stop(now + 0.08);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.85);
+        }
+
+        // 📡 ฟังก์ชันยิงข้อมูลไปสร้าง Page ใน Notion Database
+        function sendToNotionDatabase(habit) {
+            if (!N_WEBHOOK_URL || N_WEBHOOK_URL === "YOUR_WEBHOOK_URL") {
+                console.log("Database Integration Ready: Webhook URL not set yet.");
+                return;
+            }
+
+            const data = {
+                habitId: habit.id,
+                habitName: habit.name,
+                category: habit.category,
+                completedAt: new Date().toISOString(),
+                status: "Completed"
+            };
+
+            fetch(N_WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+            .then(res => console.log("Notion History Created successfully!"))
+            .catch(err => console.error("Database communication error:", err));
         }
 
         function renderHabits() {
@@ -545,8 +550,6 @@
                         <div class="left-core">
                             <div class="icon-box">${iconHTML}</div>
                             <div class="info-box">
-                                
-                                <!-- 🔴 เลเยอร์สถานะปกติ (ก่อนทำเสร็จ) -->
                                 <div class="uncompleted-layout">
                                     <div class="habit-title-row">
                                         <span class="habit-name">${habit.name}</span>
@@ -554,13 +557,10 @@
                                     </div>
                                     <div class="message-text">${habit.todoMsg}</div>
                                 </div>
-
-                                <!-- 👑 เลเยอร์สถานะสำเร็จ (โชว์ Done MSG และ เก็บ Category ไว้ตามบรีฟ) -->
                                 <div class="completed-layout">
                                     <span class="category-badge">${habit.category}</span>
                                     <div class="done-message-display">${habit.doneMsg}</div>
                                 </div>
-
                             </div>
                         </div>
                         <div class="state-indicator">
@@ -579,8 +579,8 @@
                 renderHabits();
 
                 if (habit.checked) {
-                    // เล่นเสียงดีดแก้วสุดหรูหรา
-                    playPremiumGlassSound();
+                    playSatisfyingDongSound();
+                    sendToNotionDatabase(habit); // Trigger ระบบ Database
 
                     if (event) {
                         const blockEl = document.getElementById(`block-${id}`);
@@ -626,8 +626,6 @@
             const panel = document.getElementById('editor-panel');
             const isFlex = (panel.style.display === 'flex');
             panel.style.display = isFlex ? 'none' : 'flex';
-            
-            // อัปเดตค่า Input ตัวสไลด์ให้ตรงกับปัจจุบันเมื่อเปิด Panel
             if (!isFlex) {
                 document.getElementById('sound-volume').value = globalVolume;
                 document.getElementById('vol-txt').innerText = `${Math.round(globalVolume * 100)}%`;
@@ -637,8 +635,8 @@
         function updateVolume(val) {
             globalVolume = parseFloat(val);
             document.getElementById('vol-txt').innerText = `${Math.round(globalVolume * 100)}%`;
-            localStorage.setItem('habit_glass_volume', globalVolume);
-            playPremiumGlassSound(); // เล่นเทสเสียงสั้นๆ ให้ผู้ใช้รู้ระดับความดัง
+            localStorage.setItem('habit_sine_volume', globalVolume);
+            playSatisfyingDongSound();
         }
 
         function loadIntoEditor(id) {
@@ -700,7 +698,6 @@
             document.getElementById('habit-done-msg').value = '';
         }
 
-        // รันครั้งแรก
         renderHabits();
     </script>
 </body>
