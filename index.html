@@ -67,8 +67,9 @@
       border: 2px solid #8B0016;
       border-radius: 12px;
       padding: 10px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: bold;
+      text-transform: uppercase;
       cursor: pointer;
       flex: 1;
       transition: all 0.2s ease;
@@ -96,8 +97,10 @@
       border: 2px solid #b07c7c;
       border-radius: 12px;
       padding: 12px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       cursor: not-allowed;
       width: 100%;
       box-sizing: border-box;
@@ -127,23 +130,45 @@
       font-weight: bold;
       letter-spacing: 1px;
       text-transform: uppercase;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
       color: #8B0016;
-      opacity: 0.8;
       text-align: center;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+    .save-list-title::after {
+      content: '▲';
+      font-size: 0.6rem;
+      transition: transform 0.3s ease;
+    }
+    .save-list-section.collapsed .save-list-title::after {
+      transform: rotate(180deg);
+    }
+    .save-list-container {
+      max-height: 150px;
+      overflow-y: auto;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      opacity: 1;
+    }
+    .save-list-section.collapsed .save-list-container {
+      max-height: 0px;
+      opacity: 0;
+      overflow: hidden;
     }
     .save-list {
       list-style: none;
       padding: 0;
       margin: 0;
-      max-height: 150px;
-      overflow-y: auto;
     }
     /* Custom thin scrollbar for minimalist look */
-    .save-list::-webkit-scrollbar {
+    .save-list-container::-webkit-scrollbar {
       width: 4px;
     }
-    .save-list::-webkit-scrollbar-thumb {
+    .save-list-container::-webkit-scrollbar-thumb {
       background: #8B0016;
       border-radius: 4px;
     }
@@ -160,21 +185,55 @@
     }
     .save-info {
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 120px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      margin-right: 8px;
+    }
+    .save-name-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .save-name {
       font-size: 0.8rem;
       font-weight: bold;
       color: #8B0016;
-      display: block;
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid transparent;
+      padding: 1px 3px;
+      border-radius: 4px;
+    }
+    .save-name:hover {
+      background: #f1dbda40;
+      border-color: #8b001630;
+    }
+    .save-name-input {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #8B0016;
+      border: 1px solid #8B0016;
+      background: #FDF3F2;
+      border-radius: 4px;
+      padding: 1px 3px;
+      width: 90%;
+      outline: none;
+    }
+    .edit-icon {
+      font-size: 0.65rem;
+      opacity: 0.4;
+      cursor: pointer;
+    }
+    .edit-icon:hover {
+      opacity: 1;
     }
     .save-time {
       font-size: 0.7rem;
       color: #8b0016a0;
+      padding-left: 3px;
     }
     .save-actions {
       display: flex;
@@ -187,6 +246,7 @@
       color: #8B0016;
       font-size: 0.7rem;
       font-weight: bold;
+      text-transform: uppercase;
       cursor: pointer;
       padding: 3px 6px;
       transition: all 0.2s;
@@ -215,19 +275,21 @@
   <div class="timer-display" id="display">00:00:00</div>
   
   <div class="control-buttons">
-    <button class="btn btn-start" id="startBtn" onclick="startTimer()">Start</button>
-    <button class="btn" id="pauseBtn" onclick="pauseTimer()" style="display:none;">Pause</button>
+    <button class="btn btn-start" id="startBtn" onclick="startTimer()">Initiate</button>
+    <button class="btn" id="pauseBtn" onclick="pauseTimer()" style="display:none;">Halt</button>
     <button class="btn" id="resetBtn" onclick="resetTimer()">Reset</button>
   </div>
   
-  <button class="save-button" id="saveBtn" onclick="saveGame()" disabled>Save Game</button>
+  <button class="save-button" id="saveBtn" onclick="saveGame()" disabled>Record Progress</button>
 
   <!-- Saved Game Files (List) -->
-  <div class="save-list-section">
-    <div class="save-list-title">💾 Saved Files</div>
-    <ul class="save-list" id="saveList">
-      <!-- Save slots will be injected here -->
-    </ul>
+  <div class="save-list-section" id="saveListSection">
+    <div class="save-list-title" id="saveListToggle" onclick="toggleSaveList()">💾 Saved Files</div>
+    <div class="save-list-container">
+      <ul class="save-list" id="saveList">
+        <!-- Save slots will be injected here -->
+      </ul>
+    </div>
   </div>
 </div>
 
@@ -243,9 +305,15 @@
   const saveBtn = document.getElementById('saveBtn');
   const titleInput = document.getElementById('titleInput');
   const saveList = document.getElementById('saveList');
+  const saveListSection = document.getElementById('saveListSection');
 
-  // Load saves from LocalStorage on start
+  // Load saves and collapse state from LocalStorage on start
   let savedGames = JSON.parse(localStorage.getItem('palace_stopwatch_saves')) || [];
+  let isCollapsed = JSON.parse(localStorage.getItem('palace_stopwatch_collapsed')) || false;
+  
+  if (isCollapsed) {
+    saveListSection.classList.add('collapsed');
+  }
   renderSaves();
 
   function timeToString(time) {
@@ -279,7 +347,6 @@
     
     saveBtn.classList.remove('active');
     saveBtn.disabled = true;
-    saveBtn.innerHTML = 'Save Game';
   }
 
   function pauseTimer() {
@@ -301,23 +368,49 @@
     elapsedTime = 0;
     display.innerHTML = "00:00:00";
     startBtn.style.display = "block";
-    startBtn.innerHTML = "Start";
+    startBtn.innerHTML = "Initiate";
     pauseBtn.style.display = "none";
 
     saveBtn.classList.remove('active');
     saveBtn.disabled = true;
-    saveBtn.innerHTML = 'Save Game';
   }
 
-  // --- SAVE GAME SYSTEM ---
+  // Toggle Collapse / Expand List
+  function toggleSaveList() {
+    saveListSection.classList.toggle('collapsed');
+    localStorage.setItem('palace_stopwatch_collapsed', saveListSection.classList.contains('collapsed'));
+  }
+
+  // --- SAVE GAME SYSTEM WITH OVERWRITE WARNING ---
   function saveGame() {
     if (elapsedTime === 0 || isRunning) return;
 
     const sessionName = titleInput.value.trim() || "Untitled Session";
     const durationString = timeToString(elapsedTime);
-    const saveId = Date.now(); // Unique ID using timestamp
+    const saveId = Date.now();
 
-    // Create a new Save object
+    // Check for duplicate names
+    const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === sessionName.toLowerCase());
+
+    if (existingIndex !== -1) {
+      // Prompt for Overwrite
+      const confirmOverwrite = confirm(`[OVERWRITE WARNING]\nA record named "${sessionName}" already exists.\n\nPress OK to overwrite this record with your new progress, or CANCEL to return and change your session name.`);
+      
+      if (confirmOverwrite) {
+        // Overwrite existing record
+        savedGames[existingIndex].timeStr = durationString;
+        savedGames[existingIndex].ms = elapsedTime;
+        savedGames[existingIndex].date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+        renderSaves();
+        resetTimer();
+        sendToNotionDatabase(savedGames[existingIndex]);
+      }
+      return; // Do nothing and return if they click Cancel
+    }
+
+    // Create a brand new Save object if no duplicate
     const newSave = {
       id: saveId,
       title: sessionName,
@@ -326,25 +419,59 @@
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     };
 
-    // Add to local array and save to storage
-    savedGames.unshift(newSave); // Add to the top of the list
+    savedGames.unshift(newSave);
     localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
 
-    // Refresh the UI list
     renderSaves();
-
-    // Reset stopwatch after saving
     resetTimer();
-
-    // Optional Notion Webhook Trigger (Active if URL is set)
     sendToNotionDatabase(newSave);
+  }
+
+  // --- EDIT SAVE NAME ON THE FLY ---
+  function enableNameEdit(id) {
+    const nameSpan = document.getElementById(`name-${id}`);
+    const editIcon = document.getElementById(`edit-icon-${id}`);
+    if (!nameSpan) return;
+
+    const currentName = nameSpan.textContent;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'save-name-input';
+    input.value = currentName;
+
+    // Hide edit icon while editing
+    if (editIcon) editIcon.style.display = 'none';
+
+    nameSpan.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const saveNewName = () => {
+      const newName = input.value.trim() || "Untitled Session";
+      
+      // Update data in array
+      const gameIndex = savedGames.findIndex(g => g.id === id);
+      if (gameIndex !== -1) {
+        savedGames[gameIndex].title = newName;
+        localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+      }
+      
+      renderSaves();
+    };
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveNewName();
+      if (e.key === 'Escape') renderSaves(); // Revert without saving
+    });
+
+    input.addEventListener('blur', saveNewName);
   }
 
   function renderSaves() {
     saveList.innerHTML = '';
     
     if (savedGames.length === 0) {
-      saveList.innerHTML = '<li style="text-align:center; font-size:0.75rem; color:#8b001680; padding: 10px;">No saved files found.</li>';
+      saveList.innerHTML = '<li style="text-align:center; font-size:0.75rem; color:#8b001680; padding: 10px;">No records established.</li>';
       return;
     }
 
@@ -353,7 +480,10 @@
       li.className = 'save-item';
       li.innerHTML = `
         <div class="save-info">
-          <span class="save-name" title="${game.title}">${game.title}</span>
+          <div class="save-name-container">
+            <span class="save-name" id="name-${game.id}" onclick="enableNameEdit(${game.id})" title="Click to rename">${game.title}</span>
+            <span class="edit-icon" id="edit-icon-${game.id}" onclick="enableNameEdit(${game.id})">✏️</span>
+          </div>
           <span class="save-time">${game.timeStr} (${game.date})</span>
         </div>
         <div class="save-actions">
@@ -370,35 +500,32 @@
     const targetGame = savedGames.find(g => g.id === id);
     if (!targetGame) return;
 
-    // Pause current run if any
     clearInterval(timerInterval);
     isRunning = false;
 
-    // Load values back into stopwatch variables
     elapsedTime = targetGame.ms;
     display.innerHTML = targetGame.timeStr;
     titleInput.value = targetGame.title;
 
-    // Adjust button states
     startBtn.style.display = "block";
     startBtn.innerHTML = "Resume";
     pauseBtn.style.display = "none";
     
-    // Enable save button in case they want to modify and re-save
     saveBtn.classList.add('active');
     saveBtn.disabled = false;
   }
 
   function deleteGame(id) {
-    savedGames = savedGames.filter(g => g.id !== id);
-    localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
-    renderSaves();
+    if (confirm("Delete this record permanently?")) {
+      savedGames = savedGames.filter(g => g.id !== id);
+      localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+      renderSaves();
+    }
   }
 
   // --- WEBHOOK TO NOTION (OPTIONAL) ---
   function sendToNotionDatabase(saveData) {
-    const webhookUrl = 'YOUR_WEBHOOK_URL_HERE'; // Replace with Make/Zapier URL if using
-    
+    const webhookUrl = 'YOUR_WEBHOOK_URL_HERE';
     if (webhookUrl === 'YOUR_WEBHOOK_URL_HERE') return;
 
     fetch(webhookUrl, {
