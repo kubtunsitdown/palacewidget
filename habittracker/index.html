@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Luxury Habit Tracker</title>
+    <style>
+        :root {
+            --bg-color: #fdfbf7;      /* สีครีมลักชู */
+            --main-red: #d93838;      /* แดงสดคุมโทน */
+            --dark-red: #801f1f;      /* แดงบอร์โดซ์เข้ม */
+            --dark-text: #1a1a1a;     /* ดำมินิมอล */
+            --gold: #d4af37;          /* ทองหรูหรา */
+            --card-bg: #ffffff;
+            --border-width: 3px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--dark-text);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Top Header & Control */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: var(--border-width) solid var(--dark-text);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+
+        .btn-add {
+            background: var(--card-bg);
+            border: var(--border-width) solid var(--dark-text);
+            padding: 6px 12px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px var(--dark-text);
+            transition: all 0.1s ease;
+        }
+
+        .btn-add:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0px 0px 0px var(--dark-text);
+        }
+
+        /* Weekly Grid Section */
+        .weekly-section {
+            background: var(--card-bg);
+            border: var(--border-width) solid var(--dark-text);
+            padding: 15px;
+            box-shadow: 5px 5px 0px var(--dark-text);
+        }
+
+        .weekly-row {
+            margin-bottom: 12px;
+        }
+
+        .weekly-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .weekly-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--dark-red);
+            margin-bottom: 6px;
+        }
+
+        .grid-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .day-box {
+            aspect-ratio: 1;
+            border: 2px solid var(--dark-text);
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .day-box.active {
+            background: var(--main-red);
+            color: white;
+        }
+
+        /* Interval Cards */
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .habit-card {
+            background: var(--card-bg);
+            border: var(--border-width) solid var(--dark-text);
+            padding: 16px;
+            box-shadow: 5px 5px 0px var(--dark-text);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .habit-card.rest {
+            opacity: 0.65;
+            background: #fafafa;
+        }
+
+        .habit-card.overdue {
+            border-color: var(--main-red);
+            box-shadow: 5px 5px 0px var(--main-red);
+        }
+
+        .card-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 70%;
+        }
+
+        .habit-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .streak-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .habit-status {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #555;
+            line-height: 1.3;
+        }
+
+        .btn-tick {
+            background: var(--main-red);
+            color: white;
+            border: var(--border-width) solid var(--dark-text);
+            padding: 10px 16px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px var(--dark-text);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .btn-tick:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0px 0px 0px var(--dark-text);
+        }
+
+        .btn-tick.disabled {
+            background: #e0e0e0;
+            color: #a0a0a0;
+            border-color: #a0a0a0;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: none;
+            border: none;
+            font-size: 0.75rem;
+            color: #ccc;
+            cursor: pointer;
+        }
+        .btn-delete:hover { color: var(--main-red); }
+
+        /* Custom Prompt Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--bg-color);
+            border: var(--border-width) solid var(--dark-text);
+            padding: 20px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 8px 8px 0px var(--dark-text);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal-content h3 { font-weight: 800; }
+        .modal-content input, .modal-content select {
+            padding: 8px;
+            border: 2px solid var(--dark-text);
+            font-weight: 600;
+        }
+        .modal-btns {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1>Habits</h1>
+        <button class="btn-add" onclick="openModal()">[ + Add ]</button>
+    </div>
+
+    <!-- Weekly Grid (2 Weeks) -->
+    <div class="weekly-section">
+        <div class="weekly-row">
+            <div class="weekly-title">This Week (สัปดาห์นี้)</div>
+            <div class="grid-days" id="current-week-grid"></div>
+        </div>
+        <div class="weekly-row">
+            <div class="weekly-title">Last Week (สัปดาห์ที่แล้ว)</div>
+            <div class="grid-days" id="prev-week-grid"></div>
+        </div>
+    </div>
+
+    <!-- Interval Cards Container -->
+    <div class="cards-container" id="habit-cards-container"></div>
+</div>
+
+<!-- Modal สำหรับเพิ่ม Habit ใหม่ -->
+<div class="modal" id="habit-modal">
+    <div class="modal-content">
+        <h3>Create Custom Habit</h3>
+        <input type="text" id="habit-name" placeholder="ชื่อกิจกรรม (เช่น Workout)">
+        <input type="text" id="habit-icon" placeholder="ไอคอน (เช่น 💪, ✨, 🧼)">
+        <select id="habit-interval">
+            <option value="1">ทำทุกวัน (Everyday)</option>
+            <option value="2">วันเว้นวัน (Alternate Day)</option>
+            <option value="3">ทุกๆ 3 วัน (Every 3 Days)</option>
+            <option value="7">ทุกๆ 1 สัปดาห์ (Weekly)</option>
+        </select>
+        <div class="modal-btns">
+            <button class="btn-add" style="box-shadow:none; background:#eee;" onclick="closeModal()">Cancel</button>
+            <button class="btn-add" style="box-shadow:none; background:var(--main-red); color:white;" onclick="addHabit()">Create</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ข้อมูลเริ่มต้นสำหรับทดสอบระบบ
+    const defaultHabits = [
+        { id: "1", name: "Workout", icon: "💪", interval: 2, lastDone: null, streak: 0 },
+        { id: "2", name: "Skin Scrub", icon: "✨", interval: 3, lastDone: null, streak: 0 },
+        { id: "3", name: "Wash Hair", icon: "🧼", interval: 2, lastDone: null, streak: 0 }
+    ];
+
+    let habits = JSON.parse(localStorage.getItem('notion_habits')) || defaultHabits;
+    let historyLog = JSON.parse(localStorage.getItem('notion_habits_history')) || [];
+
+    // ดึงวันในสัปดาห์ปัจจุบันและสัปดาห์ที่แล้ว
+    function getStartOfWeek(d, offsetDays = 0) {
+        d = new Date(d);
+        let day = d.getDay(),
+            diff = d.getDate() - day + (day == 0 ? -6:1) + offsetDays; 
+        return new Date(d.setDate(diff));
+    }
+
+    // สร้างตาราง 2 สัปดาห์
+    function renderWeeklyGrids() {
+        const currentWeekGrid = document.getElementById('current-week-grid');
+        const prevWeekGrid = document.getElementById('prev-week-grid');
+        currentWeekGrid.innerHTML = '';
+        prevWeekGrid.innerHTML = '';
+
+        const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+        const todayStr = new Date().toDateString();
+
+        // สัปดาห์นี้
+        let startCur = getStartOfWeek(new Date(), 0);
+        for(let i=0; i<7; i++) {
+            let checkDate = new Date(startCur);
+            checkDate.setDate(startCur.getDate() + i);
+            let dateStr = checkDate.toDateString();
+
+            let isDone = historyLog.includes(dateStr);
+            let box = document.createElement('div');
+            box.className = `day-box ${isDone ? 'active' : ''}`;
+            box.innerText = dayLabels[i];
+            if(dateStr === todayStr) box.style.borderColor = 'var(--gold)';
+            currentWeekGrid.appendChild(box);
+        }
+
+        // สัปดาห์ที่แล้ว
+        let startPrev = getStartOfWeek(new Date(), -7);
+        for(let i=0; i<7; i++) {
+            let checkDate = new Date(startPrev);
+            checkDate.setDate(startPrev.getDate() + i);
+            let dateStr = checkDate.toDateString();
+
+            let isDone = historyLog.includes(dateStr);
+            let box = document.createElement('div');
+            box.className = `day-box ${isDone ? 'active' : ''}`;
+            box.innerText = dayLabels[i];
+            prevWeekGrid.appendChild(box);
+        }
+    }
+
+    // คำนวณสถานะของการ์ดและเรนเดอร์ออกจอ
+    function renderHabitCards() {
+        const container = document.getElementById('habit-cards-container');
+        container.innerHTML = '';
+
+        const now = new Date();
+        const todayStr = now.toDateString();
+
+        habits.forEach(habit => {
+            let statusText = "";
+            let cardClass = "habit-card";
+            let btnText = "TICK 🔴";
+            let isBtnDisabled = false;
+
+            if (!habit.lastDone) {
+                statusText = "ยังไม่เคยเริ่มทำเลย มาลุยกันเถอะ! 🚀";
+                cardClass += " overdue";
+            } else {
+                let lastDoneDate = new Date(habit.lastDone);
+                // คำนวณจำนวนวันที่ต่างกัน
+                let diffTime = Math.abs(now.setHours(0,0,0,0) - lastDoneDate.setHours(0,0,0,0));
+                let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (habit.lastDone === todayStr) {
+                    statusText = "วันนี้คุณทำเสร็จแล้ว! พักผ่อนได้ ✨";
+                    cardClass += " rest";
+                    btnText = "DONE 🫧";
+                    isBtnDisabled = true;
+                } else if (diffDays < habit.interval) {
+                    statusText = `วันนี้วันพักผ่อน เจอกันอีกทีเมื่อครบกำหนดจ้า 😎`;
+                    cardClass += " rest";
+                    btnText = "REST ⏳";
+                    isBtnDisabled = true;
+                } else if (diffDays === habit.interval) {
+                    statusText = `🔥 ถึงเวลาแล้ว! อย่าขี้เกียจ ลุยเลยนะ!`;
+                } else {
+                    let overdueDays = diffDays - habit.interval;
+                    statusText = `🐊 OVERDUE! เบี้ยวมา ${overdueDays} วันแล้วนะ หน้าจะเริ่มหนาละนะ`;
+                    cardClass += " overdue";
+                }
+            }
+
+            const card = document.createElement('div');
+            card.className = cardClass;
+            card.innerHTML = `
+                <button class="btn-delete" onclick="deleteHabit('${habit.id}')">×</button>
+                <div class="card-left">
+                    <div class="habit-title">
+                        <span>${habit.icon} ${habit.name}</span>
+                        <span class="streak-badge">🔥 ${habit.streak} days</span>
+                    </div>
+                    <div class="habit-status">${statusText}</div>
+                </div>
+                <button class="btn-tick ${isBtnDisabled ? 'disabled' : ''}" 
+                        ${isBtnDisabled ? 'disabled' : ''} 
+                        onclick="tickHabit('${habit.id}')">${btnText}</button>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // ฟังก์ชันกดติ๊กกิจวัตร
+    window.tickHabit = function(id) {
+        const todayStr = new Date().toDateString();
+        habits = habits.map(habit => {
+            if (habit.id === id) {
+                // คำนวณ Streak
+                if (habit.lastDone) {
+                    let lastDoneDate = new Date(habit.lastDone);
+                    let diffTime = Math.abs(new Date().setHours(0,0,0,0) - lastDoneDate.setHours(0,0,0,0));
+                    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays <= habit.interval + 1) {
+                        habit.streak += 1; // ทำต่อเนื่องหรือเรทไม่เกิน 1 วัน นับสตรีคต่อ
+                    } else {
+                        habit.streak = 1; // หลุดสตรีคยาว รีเซ็ตเริ่มใหม่
+                    }
+                } else {
+                    habit.streak = 1; // ติ๊กครั้งแรก
+                }
+                habit.lastDone = todayStr;
+            }
+            return habit;
+        });
+
+        // บันทึกลงตาราง Grid รายวันด้วย
+        if (!historyLog.includes(todayStr)) {
+            historyLog.push(todayStr);
+        }
+
+        saveData();
+        renderHabitCards();
+        renderWeeklyGrids();
+    }
+
+    // จัดการข้อมูล Custom Habit
+    window.openModal = function() { document.getElementById('habit-modal').display = 'flex'; document.getElementById('habit-modal').style.display = 'flex'; }
+    window.closeModal = function() { document.getElementById('habit-modal').style.display = 'none'; }
+    
+    window.addHabit = function() {
+        const name = document.getElementById('habit-name').value;
+        const icon = document.getElementById('habit-icon').value || "📌";
+        const interval = parseInt(document.getElementById('habit-interval').value);
+
+        if(!name) return alert("กรุณาใส่ชื่อกิจกรรมด้วยนะเธอ");
+
+        const newHabit = {
+            id: Date.now().toString(),
+            name: name,
+            icon: icon,
+            interval: interval,
+            lastDone: null,
+            streak: 0
+        };
+
+        habits.push(newHabit);
+        saveData();
+        closeModal();
+        renderHabitCards();
+        // เคลียร์ค่าในฟอร์ม
+        document.getElementById('habit-name').value = '';
+    }
+
+    window.deleteHabit = function(id) {
+        if(confirm("แน่ใจนะว่าจะลบกิจกรรมนี้ออกจากสเปซของคุณ?")) {
+            habits = habits.filter(h => h.id !== id);
+            saveData();
+            renderHabitCards();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('notion_habits', JSON.stringify(habits));
+        localStorage.setItem('notion_habits_history', JSON.stringify(historyLog));
+    }
+
+    // เริ่มทำงานครั้งแรก
+    renderWeeklyGrids();
+    renderHabitCards();
+</script>
+</body>
+</html>
