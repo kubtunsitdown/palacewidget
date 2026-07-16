@@ -18,13 +18,12 @@ box-sizing: border-box;
 position: relative;
 }
 
-/* Container หลักสำหรับทำหน้าที่จองพื้นที่การสเกล */
-.scale-wrapper {
-display: flex;
-justify-content: center;
-align-items: center;
-transition: transform 0.2s ease;
+/* คอนเทนเนอร์หลักสำหรับควบคุมการย่อขยายแบบคงสัดส่วนเป๊ะๆ */
+.scaler-wrapper {
 transform-origin: center center;
+transition: transform 0.2s ease;
+display: inline-block;
+position: relative;
 }
 
 .widget-container {
@@ -40,34 +39,34 @@ box-sizing: border-box;
 position: relative;
 }
 
-/* โซนปรับขนาดที่ซ่อนตัวแบบ Minimal Lux ข้างบน */
-.size-controller {
+/* ช่องใส่ตัวคูณขนาดแบบมินิมอล ซ่อนอยู่มุมขวาบน */
+.scale-control-box {
+position: absolute;
+top: 8px;
+right: 12px;
 display: flex;
-justify-content: flex-end;
 align-items: center;
-gap: 6px;
-margin-bottom: 12px;
-font-size: 0.68rem;
+gap: 3px;
+font-size: 0.65rem;
 font-weight: bold;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-opacity: 0.6;
+opacity: 0.5;
 transition: opacity 0.2s;
+z-index: 10;
 }
-.size-controller:hover {
+.scale-control-box:hover {
 opacity: 1;
 }
 .scale-input {
+width: 35px;
 background: #ffffff;
-border: 1.5px solid #8B0016;
-border-radius: 6px;
+border: 1px solid #8B0016;
+border-radius: 4px;
 color: #8B0016;
-font-size: 0.68rem;
+font-size: 0.65rem;
 font-weight: bold;
 text-align: center;
-width: 50px;
-padding: 2px 0;
 outline: none;
+padding: 1px;
 }
 
 /* Editable Title Styled like a clean input */
@@ -207,7 +206,7 @@ list-style: none;
 padding: 0;
 margin: 0;
 }
-/* Custom thin scrollbar */
+/* Custom thin scrollbar for minimalist look */
 .save-list-container::-webkit-scrollbar {
 width: 4px;
 }
@@ -391,11 +390,11 @@ background: #f1dbda;
 </head>
 <body>
 
-<div class="scale-wrapper" id="scaleWrapper">
+<div class="scaler-wrapper" id="scalerWrapper">
 <div class="widget-container">
-<div class="size-controller">
-<span>Size Multiplier:</span>
-<input type="number" id="scaleInput" class="scale-input" value="1" min="0.5" max="2" step="0.05" oninput="changeWidgetScale()">
+<div class="scale-control-box">
+<span>SIZE:</span>
+<input type="number" id="scaleInput" class="scale-input" value="1" step="0.1" min="0.3" max="3" oninput="changeWidgetScale(this.value)">
 </div>
 
 <input type="text" id="titleInput" class="title-input" value="Focus Session" placeholder="ENTER SESSION NAME">
@@ -436,9 +435,9 @@ let startTime = 0;
 let elapsedTime = 0;
 let timerInterval;
 let isRunning = false;
-let pendingOverwriteIndex = null;
+let pendingOverwriteIndex = null; 
 
-const scaleWrapper = document.getElementById('scaleWrapper');
+const scalerWrapper = document.getElementById('scalerWrapper');
 const scaleInput = document.getElementById('scaleInput');
 const display = document.getElementById('display');
 const startBtn = document.getElementById('startBtn');
@@ -451,32 +450,34 @@ const customModal = document.getElementById('customModal');
 const modalText = document.getElementById('modalText');
 const modalConfirmBtn = document.getElementById('modalConfirmBtn');
 
-// Load saves and scale from LocalStorage
+// โหลดข้อมูลบันทึกและขนาดล่าสุดจาก LocalStorage
 let savedGames = JSON.parse(localStorage.getItem('palace_stopwatch_saves')) || [];
 let currentScale = parseFloat(localStorage.getItem('palace_stopwatch_scale')) || 1;
 
-// เซ็ตขนาดเริ่มต้นตามค่าที่เซฟไว้ล่าสุด
+// อัปเดตขนาดหน้าเว็บตามที่เคยเซฟไว้
 scaleInput.value = currentScale;
-changeWidgetScale();
+changeWidgetScale(currentScale);
 
+// ตั้งค่าตั้งต้นให้พับลิสต์
 saveListSection.classList.add('collapsed');
+
 renderSaves();
 
-// ฟังก์ชันปรับสเกลขนาดแบบครอบคลุมทั้งชิ้น
-function changeWidgetScale() {
-let scaleValue = parseFloat(scaleInput.value);
-// ป้องกันการใส่ค่าเอ๋อๆ หรือว่างเปล่า
-if (isNaN(scaleValue) || scaleValue <= 0) scaleValue = 1;
-
-scaleWrapper.style.transform = `scale(${scaleValue})`;
+/* --- DYNAMIC SCALE FUNCTION --- */
+function changeWidgetScale(val) {
+let scaleValue = parseFloat(val);
+if (isNaN(scaleValue) || scaleValue <= 0) scaleValue = 1; // กันบั๊กกรณีลบเลขทิ้ง
+scalerWrapper.style.transform = `scale(${scaleValue})`;
 localStorage.setItem('palace_stopwatch_scale', scaleValue);
 }
 
 function timeToString(time) {
 let diffInHrs = time / 3600000;
 let hh = Math.floor(diffInHrs);
+
 let diffInMin = (diffInHrs - hh) * 60;
 let mm = Math.floor(diffInMin);
+
 let diffInSec = (diffInMin - mm) * 60;
 let ss = Math.floor(diffInSec);
 
@@ -498,6 +499,7 @@ display.innerHTML = timeToString(elapsedTime);
 
 startBtn.style.display = "none";
 pauseBtn.style.display = "block";
+
 saveBtn.classList.remove('active');
 saveBtn.disabled = true;
 }
@@ -523,6 +525,7 @@ display.innerHTML = "00:00:00";
 startBtn.style.display = "block";
 startBtn.innerHTML = "Start";
 pauseBtn.style.display = "none";
+
 saveBtn.classList.remove('active');
 saveBtn.disabled = true;
 }
@@ -531,6 +534,7 @@ function toggleSaveList() {
 saveListSection.classList.toggle('collapsed');
 }
 
+/* --- IN-WIDGET MODAL CONTROLS --- */
 function openModal(sessionName, index) {
 modalText.innerHTML = `A record named <strong>"${sessionName}"</strong> already exists.<br><br>Press Overwrite to update progress, or Cancel to rename.`;
 pendingOverwriteIndex = index;
@@ -557,12 +561,14 @@ closeModal();
 }
 };
 
+/* --- SAVE GAME SYSTEM WITH CUSTOM MODAL --- */
 function saveGame() {
 if (elapsedTime === 0 || isRunning) return;
 
 const sessionName = titleInput.value.trim() || "Untitled Session";
 const durationString = timeToString(elapsedTime);
 const saveId = Date.now();
+
 const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === sessionName.toLowerCase());
 
 if (existingIndex !== -1) {
@@ -575,16 +581,18 @@ id: saveId,
 title: sessionName,
 timeStr: durationString,
 ms: elapsedTime,
-date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 };
 
 savedGames.unshift(newSave);
 localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+
 renderSaves();
 sendToNotionDatabase(newSave);
 resetTimer();
 }
 
+/* --- EDIT SAVE NAME ON THE FLY --- */
 function enableNameEdit(id) {
 const nameSpan = document.getElementById(`name-${id}`);
 const editIcon = document.getElementById(`edit-icon-${id}`);
@@ -597,6 +605,7 @@ input.className = 'save-name-input';
 input.value = currentName;
 
 if (editIcon) editIcon.style.display = 'none';
+
 nameSpan.replaceWith(input);
 input.focus();
 input.select();
@@ -615,15 +624,18 @@ input.addEventListener('keydown', (e) => {
 if (e.key === 'Enter') saveNewName();
 if (e.key === 'Escape') renderSaves();
 });
+
 input.addEventListener('blur', saveNewName);
 }
 
 function renderSaves() {
 saveList.innerHTML = '';
+
 if (savedGames.length === 0) {
 saveList.innerHTML = '<li style="text-align:center; font-size:0.75rem; color:#8b001680; padding: 10px;">No records established.</li>';
 return;
 }
+
 savedGames.forEach(game => {
 const li = document.createElement('li');
 li.className = 'save-item';
@@ -644,12 +656,14 @@ saveList.appendChild(li);
 });
 }
 
+/* --- LOAD GAME SYSTEM --- */
 function loadGame(id) {
 const targetGame = savedGames.find(g => g.id === id);
 if (!targetGame) return;
 
 clearInterval(timerInterval);
 isRunning = false;
+
 elapsedTime = targetGame.ms;
 display.innerHTML = targetGame.timeStr;
 titleInput.value = targetGame.title;
@@ -657,6 +671,7 @@ titleInput.value = targetGame.title;
 startBtn.style.display = "block";
 startBtn.innerHTML = "Resume";
 pauseBtn.style.display = "none";
+
 saveBtn.classList.add('active');
 saveBtn.disabled = false;
 }
@@ -669,6 +684,7 @@ renderSaves();
 }
 }
 
+/* --- WEBHOOK TO NOTION (OPTIONAL) --- */
 function sendToNotionDatabase(saveData) {
 const webhookUrl = 'YOUR_WEBHOOK_URL_HERE';
 if (webhookUrl === 'YOUR_WEBHOOK_URL_HERE') return;
