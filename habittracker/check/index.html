@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palace Red Cinematic Tracker</title>
+    <title>Palace Red Cinematic Tracker with Sound</title>
     <style>
         :root {
             --palace-red: #9E3640;
@@ -40,7 +40,7 @@
             max-width: 550px;
         }
 
-        /* Block Premium Shadow */
+        /* Block Core */
         .habit-block {
             width: 100%;
             height: 130px;
@@ -52,8 +52,8 @@
             align-items: center;
             padding: 0 24px;
             cursor: pointer;
-            overflow: hidden; /* ล็อคอนิเมชันให้อยู่ในบล็อก */
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.2, 1), box-shadow 0.4s ease;
+            overflow: hidden;
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.2, 1), box-shadow 0.6s ease;
         }
 
         .habit-block:hover {
@@ -61,7 +61,7 @@
             box-shadow: 0 8px 32px rgba(158, 54, 64, 0.2);
         }
 
-        /* Top Corner Status Light */
+        /* Status Dot */
         .status-dot {
             position: absolute;
             top: 14px;
@@ -70,7 +70,7 @@
             height: 6px;
             background: var(--palace-red);
             border-radius: 50%;
-            z-index: 2;
+            z-index: 5;
             transition: opacity 0.4s ease;
         }
 
@@ -78,7 +78,7 @@
             opacity: 0;
         }
 
-        /* Cinematic Slow Fill Animation */
+        /* Fluid Slow Fill Animation */
         .fill-layer {
             position: absolute;
             top: 0;
@@ -89,15 +89,14 @@
             border-radius: 16px;
             z-index: 1;
             clip-path: circle(0% at 90% 50%);
-            /* ปรับให้ช้าลง หนักแน่น และไหลลื่นขึ้น */
-            transition: clip-path 0.85s cubic-bezier(0.25, 1, 0.2, 1);
+            transition: clip-path 0.9s cubic-bezier(0.25, 1, 0.2, 1);
         }
 
         .habit-block.checked .fill-layer {
-            clip-path: circle(120% at 90% 50%);
+            clip-path: circle(130% at 90% 50%);
         }
 
-        /* Content Flex Area */
+        /* Content Flex Wrapper */
         .habit-content {
             position: relative;
             z-index: 2;
@@ -117,7 +116,7 @@
             min-width: 0;
         }
 
-        /* Icon Box Concept */
+        /* Icon Wrapper */
         .icon-box {
             font-size: 2.4rem;
             display: flex;
@@ -128,7 +127,7 @@
             height: 50px;
             overflow: hidden;
             position: relative;
-            transition: transform 0.7s cubic-bezier(0.25, 1, 0.2, 1);
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.2, 1);
         }
 
         .icon-silhouette {
@@ -138,27 +137,34 @@
         }
 
         .habit-block.checked .icon-box {
-            transform: scale(1.2) rotate(-8deg);
+            transform: scale(1.18) rotate(-6deg);
             transition-delay: 0.1s;
         }
 
-        /* Info Layout Dynamic System */
+        /* Text Engine Area */
         .info-box {
             display: flex;
             flex-direction: column;
             justify-content: center;
             position: relative;
-            height: 64px;
+            height: 70px;
             flex: 1;
             min-width: 0;
         }
 
-        /* Top Row Components */
+        /* Layout ตอนยังไม่เสร็จ (ก่อนโดนสลับลื่นๆ) */
+        .uncompleted-layout {
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.5s cubic-bezier(0.25, 1, 0.2, 1), transform 0.5s cubic-bezier(0.25, 1, 0.2, 1);
+            transform: translateY(0);
+            opacity: 1;
+        }
+
         .habit-title-row {
             display: flex;
             align-items: center;
             gap: 10px;
-            transition: opacity 0.4s cubic-bezier(0.25, 1, 0.2, 1), transform 0.4s ease;
         }
 
         .habit-name {
@@ -182,9 +188,9 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             flex-shrink: 0;
+            transition: background 0.5s, color 0.5s;
         }
 
-        /* Main Todo Message */
         .message-text {
             font-size: 1.35rem;
             font-weight: 800;
@@ -197,21 +203,29 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
-            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        /* 👑 Premium Finished State Layout (โชว์เฉพาะ Name ขยายใหญ่ตรงกลางบล็อก) */
-        .finished-name-display {
+        /* 👑 Layout ตอนทำสำเร็จ (ซ่อนอยู่ข้างล่าง รอเลื่อนและจางขึ้นมาแทนอย่างนุ่มนวล) */
+        .completed-layout {
             position: absolute;
             left: 0;
-            top: 50%;
-            transform: translateY(20px); /* เฟดลอยขึ้นมาจากด้านล่าง */
-            font-size: 1.45rem;
-            font-weight: 800;
-            color: rgba(255, 255, 255, 0.85);
-            letter-spacing: -0.2px;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transform: translateY(15px); /* เลื่อนลงไปรอข้างล่างนิดนึง */
             opacity: 0;
             pointer-events: none;
+            transition: transform 0.7s cubic-bezier(0.25, 1, 0.2, 1), opacity 0.6s ease;
+        }
+
+        .done-message-display {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.88);
+            letter-spacing: -0.2px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -219,36 +233,37 @@
             text-decoration: line-through;
             text-decoration-color: rgba(255, 255, 255, 0.9);
             text-decoration-thickness: 3px;
-            transition: transform 0.6s cubic-bezier(0.25, 1, 0.2, 1), opacity 0.5s ease;
+            margin-top: 4px;
         }
 
-        /* เมื่อสำเร็จ: ซ่อนองค์ประกอบเดิมออกไป */
-        .habit-block.checked .habit-title-row {
+        /* State Switch: จัดการการเลื่อนสลับเลเยอร์แบบไร้รอยต่อ */
+        .habit-block.checked .uncompleted-layout {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-15px); /* ดันข้อความเก่าจมขึ้นไปข้างบน */
             pointer-events: none;
         }
 
-        .habit-block.checked .message-text {
-            opacity: 0;
-            transform: translateY(-10px);
-            pointer-events: none;
-        }
-
-        /* เมื่อสำเร็จ: เผยข้อความชื่อหลักแทนที่แบบ Cinematic */
-        .habit-block.checked .finished-name-display {
+        .habit-block.checked .completed-layout {
             opacity: 1;
-            transform: translateY(-50%); /* จัดกึ่งกลางพอดี */
-            transition-delay: 0.25s; /* รอให้สีแดงสาดผ่านไปนิดนึงค่อยโผล่ */
+            transform: translateY(0); /* เลื่อนขึ้นมากึ่งกลางพอดี */
+            transition-delay: 0.25s; /* รออนิเมชันสีแดงคลี่ตัวออกไปก่อน */
         }
 
-        /* Checkbox Mechanism */
+        /* รักษา Category Badge ให้เปลี่ยนไปใช้สีขาวแมตช์ธีมสีแดง */
+        .habit-block.checked .completed-layout .category-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            align-self: flex-start;
+        }
+
+
+        /* Checkbox Design */
         .state-indicator {
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            z-index: 3;
+            z-index: 5;
         }
 
         .custom-checkbox {
@@ -285,7 +300,7 @@
             transition-delay: 0.2s;
         }
 
-        /* Overlay Editor */
+        /* Editor Overlay */
         .action-overlay {
             position: absolute;
             left: 10px;
@@ -320,7 +335,7 @@
             z-index: 99;
         }
 
-        /* Setup Stealth Controls */
+        /* Settings & Controls Panel */
         .bottom-controls {
             width: 100%;
             max-width: 550px;
@@ -352,7 +367,7 @@
             padding: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             margin-top: 12px;
         }
 
@@ -369,12 +384,24 @@
             color: var(--gray-sub);
         }
 
-        .editor-row input {
+        .editor-row input[type="text"] {
             border: 1px solid #ddd;
             border-radius: 6px;
             padding: 6px 10px;
             font-size: 0.85rem;
             outline: none;
+        }
+
+        /* 🎚️ Settings Sound Slider Style */
+        .sound-setting {
+            border-top: 1px dashed #eee;
+            padding-top: 10px;
+            margin-top: 5px;
+        }
+        
+        .sound-setting input[type="range"] {
+            cursor: pointer;
+            accent-color: var(--palace-red);
         }
     </style>
 </head>
@@ -383,6 +410,7 @@
     <div class="habits-container" id="habits-list"></div>
 
     <div class="bottom-controls">
+        <!-- คลิกปุ่มจิ๋วตรงนี้เพื่อตั้งค่า/เพิ่มข้อมูล -->
         <button class="btn-hidden-trigger" onclick="toggleEditorPanel()"></button>
         
         <div class="editor-panel" id="editor-panel">
@@ -402,11 +430,20 @@
                 <label>Todo MSG</label>
                 <input type="text" id="habit-todo-msg" value="Mix EQ vocal matching the beat!">
             </div>
-            <style>.editor-row.disabled-row { opacity: 0.5; pointer-events: none; }</style>
-            <div class="editor-row disabled-row">
+            <div class="editor-row">
                 <label>Done MSG</label>
-                <input type="text" placeholder="Disabled - Replaced by Name" disabled>
+                <input type="text" id="habit-done-msg" value="VOCALS SATISFACTORILY MIXED!">
             </div>
+            
+            <!-- 🎚️ ส่วนตั้งค่าระดับเสียงด้านล่างของแท็บตามบรีฟ -->
+            <div class="editor-row sound-setting">
+                <label>🔔 Glass Vol.</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="range" id="sound-volume" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume(this.value)">
+                    <span id="vol-txt" style="font-size: 0.75rem; font-weight:700; color:var(--gray-sub);">50%</span>
+                </div>
+            </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
                 <button class="action-btn" style="padding:8px;" onclick="saveHabit()">Save</button>
                 <button class="action-btn" style="padding:8px; background:#f0f0f0; color:#333;" onclick="resetEditor()">Clear</button>
@@ -415,6 +452,9 @@
     </div>
 
     <script>
+        // โหลดข้อมูลระดับเสียงที่เซฟไว้ หรือตั้งเริ่มต้นที่ 0.5
+        let globalVolume = parseFloat(localStorage.getItem('habit_glass_volume')) || 0.5;
+
         let habits = [
             {
                 id: 1,
@@ -422,6 +462,7 @@
                 name: "Vocal Mixing",
                 category: "music",
                 todoMsg: "Mix EQ vocal matching the beat!",
+                doneMsg: "VOCALS SATISFACTORILY MIXED!",
                 checked: false
             },
             {
@@ -430,9 +471,54 @@
                 name: "Hydration Status",
                 category: "health",
                 todoMsg: "Drink at least 2L of Water!",
+                doneMsg: "OPTIMAL HYDRATION ACHIEVED!",
                 checked: false
             }
         ];
+
+        // 🎹 ฟังก์ชันสร้างเสียงแก้วหรูหรา (Crystal Clink) ด้วย Web Audio API
+        function playPremiumGlassSound() {
+            if (globalVolume <= 0) return;
+
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            // สร้างคลื่นเสียงหลัก 2 ย่านความถี่ที่ซ้อนกันให้เกิดมิติสะท้อนแบบแก้วเนื้อดี
+            const now = ctx.currentTime;
+            
+            // แก้วหลัก (เสียงสูงกังวาน)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(2350, now); // คลื่นคริสตัลสูง
+            
+            // ตัวเสริมเสียงกระทบเป้าะเป้งตอนเริ่ม (Transient)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(1800, now);
+
+            // คุม Volume ผสม
+            gain1.gain.setValueAtTime(globalVolume * 0.4, now);
+            gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.6); // เสียงหางแก้วยาว
+
+            gain2.gain.setValueAtTime(globalVolume * 0.2, now);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.08); // ดับไวให้เป็นฟีลดีดเป๊าะ
+
+            // ต่อระบบเข้าลำโพง
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+
+            // สั่งเริ่มทำงาน
+            osc1.start(now);
+            osc1.stop(now + 0.6);
+            osc2.start(now);
+            osc2.stop(now + 0.08);
+        }
 
         function renderHabits() {
             const list = document.getElementById('habits-list');
@@ -459,19 +545,22 @@
                         <div class="left-core">
                             <div class="icon-box">${iconHTML}</div>
                             <div class="info-box">
-                                <!-- ส่วนหัวและ Category ก่อนทำเสร็จ -->
-                                <div class="habit-title-row">
-                                    <span class="habit-name">${habit.name}</span>
+                                
+                                <!-- 🔴 เลเยอร์สถานะปกติ (ก่อนทำเสร็จ) -->
+                                <div class="uncompleted-layout">
+                                    <div class="habit-title-row">
+                                        <span class="habit-name">${habit.name}</span>
+                                        <span class="category-badge">${habit.category}</span>
+                                    </div>
+                                    <div class="message-text">${habit.todoMsg}</div>
+                                </div>
+
+                                <!-- 👑 เลเยอร์สถานะสำเร็จ (โชว์ Done MSG และ เก็บ Category ไว้ตามบรีฟ) -->
+                                <div class="completed-layout">
                                     <span class="category-badge">${habit.category}</span>
+                                    <div class="done-message-display">${habit.doneMsg}</div>
                                 </div>
-                                <!-- ส่วนข้อความภารกิจหลักก่อนทำเสร็จ -->
-                                <div class="message-text">
-                                    ${habit.todoMsg}
-                                </div>
-                                <!-- 👑 ตัวหนังสือที่จะปรากฏเด่นๆ ตรงกลางเมื่อภารกิจสำเร็จ (ดึง Name มาขยายใหญ่) -->
-                                <div class="finished-name-display">
-                                    ${habit.name}
-                                </div>
+
                             </div>
                         </div>
                         <div class="state-indicator">
@@ -489,9 +578,14 @@
                 habit.checked = !habit.checked;
                 renderHabits();
 
-                if (habit.checked && event) {
-                    const blockEl = document.getElementById(`block-${id}`);
-                    createExplosion(blockEl, event.clientX, event.clientY);
+                if (habit.checked) {
+                    // เล่นเสียงดีดแก้วสุดหรูหรา
+                    playPremiumGlassSound();
+
+                    if (event) {
+                        const blockEl = document.getElementById(`block-${id}`);
+                        createExplosion(blockEl, event.clientX, event.clientY);
+                    }
                 }
             }
         }
@@ -501,36 +595,50 @@
             const originX = clickX ? (clickX - rect.left) : (rect.width / 2);
             const originY = clickY ? (clickY - rect.top) : (rect.height / 2);
 
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 12; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
-                particle.style.background = i % 2 === 0 ? '#ffffff' : '#ffeb3b'; 
+                particle.style.background = i % 2 === 0 ? '#ffffff' : 'rgba(255,255,255,0.6)'; 
                 element.appendChild(particle);
 
                 particle.style.left = `${originX}px`;
                 particle.style.top = `${originY}px`;
 
                 const angle = Math.random() * Math.PI * 2;
-                const velocity = 35 + Math.random() * 50;
+                const velocity = 40 + Math.random() * 40;
                 const destinationX = Math.cos(angle) * velocity;
                 const destinationY = Math.sin(angle) * velocity;
 
                 particle.animate([
                     { opacity: 1, transform: 'translate(0, 0) scale(1)' },
-                    { opacity: 0, transform: `translate(${destinationX}px, ${destinationY}px) scale(0.2)` }
+                    { opacity: 0, transform: `translate(${destinationX}px, ${destinationY}px) scale(0.3)` }
                 ], {
-                    duration: 600 + Math.random() * 300,
+                    duration: 600 + Math.random() * 200,
                     easing: 'cubic-bezier(0.25, 1, 0.2, 1)',
                     fill: 'forwards'
                 });
 
-                setTimeout(() => particle.remove(), 900);
+                setTimeout(() => particle.remove(), 800);
             }
         }
 
         function toggleEditorPanel() {
             const panel = document.getElementById('editor-panel');
-            panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
+            const isFlex = (panel.style.display === 'flex');
+            panel.style.display = isFlex ? 'none' : 'flex';
+            
+            // อัปเดตค่า Input ตัวสไลด์ให้ตรงกับปัจจุบันเมื่อเปิด Panel
+            if (!isFlex) {
+                document.getElementById('sound-volume').value = globalVolume;
+                document.getElementById('vol-txt').innerText = `${Math.round(globalVolume * 100)}%`;
+            }
+        }
+
+        function updateVolume(val) {
+            globalVolume = parseFloat(val);
+            document.getElementById('vol-txt').innerText = `${Math.round(globalVolume * 100)}%`;
+            localStorage.setItem('habit_glass_volume', globalVolume);
+            playPremiumGlassSound(); // เล่นเทสเสียงสั้นๆ ให้ผู้ใช้รู้ระดับความดัง
         }
 
         function loadIntoEditor(id) {
@@ -541,6 +649,7 @@
                 document.getElementById('habit-name').value = habit.name;
                 document.getElementById('habit-category').value = habit.category;
                 document.getElementById('habit-todo-msg').value = habit.todoMsg;
+                document.getElementById('habit-done-msg').value = habit.doneMsg;
                 document.getElementById('editor-panel').style.display = 'flex';
             }
         }
@@ -551,6 +660,7 @@
             const name = document.getElementById('habit-name').value || "New Task";
             const category = document.getElementById('habit-category').value || "LIFE";
             const todoMsg = document.getElementById('habit-todo-msg').value || "Action Required!";
+            const doneMsg = document.getElementById('habit-done-msg').value || "DONE!";
 
             if (id) {
                 const habit = habits.find(h => h.id == id);
@@ -559,6 +669,7 @@
                     habit.name = name;
                     habit.category = category;
                     habit.todoMsg = todoMsg;
+                    habit.doneMsg = doneMsg;
                 }
             } else {
                 habits.push({
@@ -567,6 +678,7 @@
                     name: name,
                     category: category,
                     todoMsg: todoMsg,
+                    doneMsg: doneMsg,
                     checked: false
                 });
             }
@@ -585,8 +697,10 @@
             document.getElementById('edit-id').value = '';
             document.getElementById('habit-name').value = '';
             document.getElementById('habit-todo-msg').value = '';
+            document.getElementById('habit-done-msg').value = '';
         }
 
+        // รันครั้งแรก
         renderHabits();
     </script>
 </body>
