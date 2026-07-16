@@ -459,13 +459,13 @@ background: #f1dbda;
 </div>
 </div>
 
-<!-- IN-WIDGET CUSTOM MODAL FOR OVERWRITE SYSTEM -->
+<!-- IN-WIDGET CUSTOM MODAL FOR SYSTEM DIALOGS (OVERWRITE & DELETE) -->
 <div class="custom-modal-overlay" id="customModal">
 <div class="custom-modal">
-<div class="modal-title">⚠️ Overwrite Warning</div>
-<div class="modal-text" id="modalText">A record named "Session" already exists. Overwrite with new progress?</div>
+<div class="modal-title" id="modalTitle">⚠️ Notification</div>
+<div class="modal-text" id="modalText">Message goes here...</div>
 <div class="modal-buttons">
-<button class="modal-btn modal-btn-confirm" id="modalConfirmBtn">Overwrite</button>
+<button class="modal-btn modal-btn-confirm" id="modalConfirmBtn">Confirm</button>
 <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
 </div>
 </div>
@@ -478,7 +478,6 @@ let startTime = 0;
 let elapsedTime = 0;
 let timerInterval;
 let isRunning = false;
-let pendingOverwriteIndex = null; 
 
 const scalerWrapper = document.getElementById('scalerWrapper');
 const scaleInput = document.getElementById('scaleInput');
@@ -489,7 +488,10 @@ const saveBtn = document.getElementById('saveBtn');
 const titleInput = document.getElementById('titleInput');
 const saveList = document.getElementById('saveList');
 const saveListSection = document.getElementById('saveListSection');
+
+// ดึงองค์ประกอบของ Modal
 const customModal = document.getElementById('customModal');
+const modalTitle = document.getElementById('modalTitle');
 const modalText = document.getElementById('modalText');
 const modalConfirmBtn = document.getElementById('modalConfirmBtn');
 
@@ -577,34 +579,26 @@ function toggleSaveList() {
 saveListSection.classList.toggle('collapsed');
 }
 
-/* --- IN-WIDGET MODAL CONTROLS --- */
-function openModal(sessionName, index) {
-modalText.innerHTML = `A record named <strong>"${sessionName}"</strong> already exists.<br><br>Press Overwrite to update progress, or Cancel to rename.`;
-pendingOverwriteIndex = index;
+/* --- GENERIC CUSTOM MODAL CONTROL --- */
+function showCustomModal(title, message, confirmLabel, onConfirmCallback) {
+modalTitle.innerHTML = title;
+modalText.innerHTML = message;
+modalConfirmBtn.innerHTML = confirmLabel;
+
+// ผูกฟังก์ชันการทำงานเมื่อผู้ใช้กดยืนยันในกล่องโมดอล
+modalConfirmBtn.onclick = function() {
+onConfirmCallback();
+closeModal();
+};
+
 customModal.classList.add('active');
 }
 
 function closeModal() {
 customModal.classList.remove('active');
-pendingOverwriteIndex = null;
 }
 
-modalConfirmBtn.onclick = function() {
-if (pendingOverwriteIndex !== null) {
-const durationString = timeToString(elapsedTime);
-savedGames[pendingOverwriteIndex].timeStr = durationString;
-savedGames[pendingOverwriteIndex].ms = elapsedTime;
-savedGames[pendingOverwriteIndex].date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
-renderSaves();
-sendToNotionDatabase(savedGames[pendingOverwriteIndex]);
-resetTimer();
-closeModal();
-}
-};
-
-/* --- SAVE GAME SYSTEM WITH CUSTOM MODAL --- */
+/* --- SAVE GAME SYSTEM --- */
 function saveGame() {
 if (elapsedTime === 0 || isRunning) return;
 
@@ -614,8 +608,20 @@ const saveId = Date.now();
 
 const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === sessionName.toLowerCase());
 
+// หากมีชื่อซ้ำ ให้เรียกกล่อง Custom Modal ขึ้นแจ้งเตือน Overwrite
 if (existingIndex !== -1) {
-openModal(sessionName, existingIndex);
+const title = "⚠️ Overwrite Warning";
+const message = `A record named <strong>"${sessionName}"</strong> already exists.<br><br>Do you want to overwrite it with your current progress?`;
+showCustomModal(title, message, "Overwrite", function() {
+savedGames[existingIndex].timeStr = durationString;
+savedGames[existingIndex].ms = elapsedTime;
+savedGames[existingIndex].date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+renderSaves();
+sendToNotionDatabase(savedGames[existingIndex]);
+resetTimer();
+});
 return; 
 }
 
@@ -719,12 +725,20 @@ saveBtn.classList.add('active');
 saveBtn.disabled = false;
 }
 
+/* --- DELETE GAME SYSTEM (USE CUSTOM MODAL) --- */
 function deleteGame(id) {
-if (confirm("Delete this record permanently?")) {
+const targetGame = savedGames.find(g => g.id === id);
+if (!targetGame) return;
+
+const title = "🗑️ Delete Record";
+const message = `Are you sure you want to permanently delete the record <strong>"${targetGame.title}"</strong>?`;
+
+// เรียกใช้ Custom Modal เพื่อขอยืนยันการลบแบบไม่ใช้ confirm ของเบราว์เซอร์
+showCustomModal(title, message, "Delete", function() {
 savedGames = savedGames.filter(g => g.id !== id);
 localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
 renderSaves();
-}
+});
 }
 
 /* --- WEBHOOK TO NOTION (OPTIONAL) --- */
