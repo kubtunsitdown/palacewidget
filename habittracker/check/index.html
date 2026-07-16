@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palace Habit Tracker Pro</title>
+    <title>Palace Habit Tracker Premium</title>
     <style>
         :root {
             --palace-red: #9E3640;
             --dark-charcoal: #1a1a1a;
-            --bg-cream: #FFF9F9; 
-            --gray-sub: #5c4d4d;
+            --bg-cream: #ffffff; 
+            --gray-sub: #666666;
+            --gray-light: #f3f3f3;
             --card-width: 550px;
             --card-height: 130px;
         }
@@ -24,8 +25,7 @@
 
         body {
             background-color: transparent;
-            color: var(--dark-charcoal);
-            padding: 10px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -33,86 +33,91 @@
             width: 100%;
         }
 
-        /* Habits List Container at the Top */
         .habits-container {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 16px;
             width: 100%;
             max-width: var(--card-width);
         }
 
-        /* 550x130 Strict Aspect Block */
+        /* 550x130 Premium Block */
         .habit-block {
             width: 100%;
             height: var(--card-height);
             background: var(--bg-cream);
-            border: 3px solid var(--dark-charcoal);
-            box-shadow: 5px 5px 0px var(--dark-charcoal);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
             position: relative;
             display: flex;
             align-items: center;
-            padding: 0 20px;
+            padding: 0 24px;
             cursor: pointer;
-            overflow: hidden;
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            overflow: visible; /* Dynamic particle overflow allowed */
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
         }
 
-        .habit-block:active {
-            transform: translate(2px, 2px);
-            box-shadow: 3px 3px 0px var(--dark-charcoal);
+        .habit-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         }
 
-        /* Smooth Animation Fill Effect from (1) to (2) */
-        .habit-block::before {
-            content: '';
+        /* Fluid Smooth Liquid Animation Fill from (1) to (2) */
+        .fill-layer {
             position: absolute;
             top: 0;
-            left: -100%;
+            left: 0;
             width: 100%;
             height: 100%;
             background: var(--palace-red);
-            transition: left 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            border-radius: 16px;
             z-index: 1;
+            clip-path: circle(0% at 90% 50%);
+            transition: clip-path 0.55s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .habit-block.checked::before {
-            left: 0;
+        .habit-block.checked .fill-layer {
+            clip-path: circle(120% at 90% 50%);
         }
 
-        /* Layout Elements inside Block */
+        /* Inner Structure */
         .habit-content {
             position: relative;
             z-index: 2;
             display: grid;
-            grid-template-columns: 70px 1fr;
+            grid-template-columns: 60px 1fr 40px;
             align-items: center;
             width: 100%;
             height: 100%;
+            transition: color 0.4s ease;
+        }
+
+        .habit-block.checked .habit-content {
+            color: #ffffff;
         }
 
         .icon-box {
-            font-size: 2.8rem; /* Big Bold Icon */
+            font-size: 2.4rem;
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            transition: transform 0.3s ease;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .checked .icon-box {
-            transform: scale(1.1) rotate(5deg);
+        .habit-block.checked .icon-box {
+            transform: scale(1.15) rotate(-5deg);
         }
 
+        /* Centralizing & Prioritizing the MSG text */
         .info-box {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 4px;
+            gap: 6px;
             height: 100%;
-            padding-left: 5px;
+            padding-left: 10px;
         }
 
-        /* Prioritized Big Typography */
         .habit-title-row {
             display: flex;
             align-items: center;
@@ -120,195 +125,251 @@
         }
 
         .habit-name {
-            font-size: 1.45rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            line-height: 1.2;
-        }
-
-        .category-badge {
-            font-size: 0.65rem;
-            font-weight: 800;
-            background: var(--dark-charcoal);
-            color: #ffffff;
-            padding: 2px 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .checked .category-badge {
-            background: #ffffff;
-            color: var(--palace-red);
-        }
-
-        .message-text {
             font-size: 0.9rem;
             font-weight: 700;
             color: var(--gray-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            transition: color 0.4s ease;
         }
 
-        /* Status (2) Checked Text styling */
-        .checked .habit-name, 
-        .checked .message-text {
-            color: #ffffff;
-        }
-
-        .checked .message-text {
-            font-size: 1rem;
+        .category-badge {
+            font-size: 0.6rem;
+            font-weight: 800;
+            background: var(--gray-light);
+            color: #444;
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        /* Action Buttons overlaying the block on hover */
+        .habit-block.checked .habit-name {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .habit-block.checked .category-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        /* MSG text made Largest & Most Prominent */
+        .message-text {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--dark-charcoal);
+            line-height: 1.2;
+            letter-spacing: -0.2px;
+            transition: color 0.4s ease, transform 0.4s ease;
+        }
+
+        .habit-block.checked .message-text {
+            color: #ffffff;
+            transform: scale(1.02);
+        }
+
+        /* UI State Indicators: Checkbox that morphs beautifully */
+        .state-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-checkbox {
+            width: 28px;
+            height: 28px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .habit-block.checked .custom-checkbox {
+            border-color: #ffffff;
+            background: #ffffff;
+            transform: scale(1.1);
+        }
+
+        .custom-checkbox::after {
+            content: '✓';
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: var(--palace-red);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .habit-block.checked .custom-checkbox::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Action overlays hidden gracefully */
         .action-overlay {
             position: absolute;
-            right: 12px;
-            top: 12px;
-            z-index: 3;
-            display: none;
-            gap: 6px;
+            left: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease, left 0.3s ease;
+            z-index: 10;
         }
 
         .habit-block:hover .action-overlay {
-            display: flex;
+            opacity: 1;
+            left: -65px;
         }
 
         .action-btn {
-            background: #ffffff;
-            border: 2px solid var(--dark-charcoal);
-            padding: 2px 6px;
+            background: var(--dark-charcoal);
+            color: white;
+            border: none;
+            padding: 4px 8px;
             font-size: 0.65rem;
-            font-weight: 800;
+            font-weight: 700;
+            border-radius: 6px;
             cursor: pointer;
             text-transform: uppercase;
         }
 
-        .action-btn:hover {
-            background: var(--dark-charcoal);
-            color: #ffffff;
+        /* Spark Particles Design */
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--palace-red);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 99;
         }
 
-        /* Bottom Controls Wrapper */
+        /* Hidden Config Button Setup */
         .bottom-controls {
             width: 100%;
             max-width: var(--card-width);
-            margin-top: 8px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
         }
 
-        .btn-trigger-panel {
-            background: var(--dark-charcoal);
-            color: #ffffff;
-            border: 3px solid var(--dark-charcoal);
-            padding: 10px;
-            font-weight: 900;
-            font-size: 0.85rem;
-            letter-spacing: 1px;
+        .btn-hidden-trigger {
+            width: 12px;
+            height: 12px;
+            background: rgba(0,0,0,0.03);
+            border-radius: 50%;
+            border: none;
             cursor: pointer;
-            text-transform: uppercase;
-            text-align: center;
-            box-shadow: 4px 4px 0px rgba(0,0,0,0.15);
+            transition: background 0.3s ease;
         }
 
-        .btn-trigger-panel:hover {
-            background: var(--palace-red);
-            border-color: var(--palace-red);
+        .btn-hidden-trigger:hover {
+            background: rgba(0, 0, 0, 0.2);
         }
 
-        /* Configuration Editor Panel */
         .editor-panel {
             display: none;
+            width: 100%;
             background: #ffffff;
-            border: 3px solid var(--dark-charcoal);
-            padding: 14px;
-            box-shadow: 4px 4px 0px var(--dark-charcoal);
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
+            margin-top: 12px;
         }
 
         .editor-row {
             display: grid;
-            grid-template-columns: 90px 1fr;
+            grid-template-columns: 100px 1fr;
             align-items: center;
             gap: 8px;
         }
 
         .editor-row label {
-            font-size: 0.7rem;
-            font-weight: 900;
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
+            color: var(--gray-sub);
         }
 
         .editor-row input {
-            border: 2px solid var(--dark-charcoal);
-            padding: 5px 8px;
-            font-size: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
             outline: none;
-            width: 100%;
         }
     </style>
 </head>
 <body>
 
-    <!-- (1) Top Section: Main Blocks -->
+    <!-- Main Active Grid Stack -->
     <div class="habits-container" id="habits-list"></div>
 
-    <!-- (2) Bottom Section: Create & Setup Interface -->
+    <!-- Hidden Setup Controls Anchor -->
     <div class="bottom-controls">
-        <button class="btn-trigger-panel" onclick="toggleEditorPanel()">⚙️ Open Setup & New Habit Bench</button>
+        <button class="btn-hidden-trigger" onclick="toggleEditorPanel()"></button>
         
         <div class="editor-panel" id="editor-panel">
             <input type="hidden" id="edit-id" value="">
             <div class="editor-row">
                 <label>Icon & Name</label>
                 <div style="display: grid; grid-template-columns: 50px 1fr; gap: 6px;">
-                    <input type="text" id="habit-icon" placeholder="💧" value="💧" style="text-align: center;">
-                    <input type="text" id="habit-name" placeholder="Habit Name (e.g., Drink Water)">
+                    <input type="text" id="habit-icon" placeholder="🔥" value="🔥" style="text-align: center;">
+                    <input type="text" id="habit-name" placeholder="E.g., Production Shift">
                 </div>
             </div>
             <div class="editor-row">
-                <label>Category</label>
-                <input type="text" id="habit-category" placeholder="e.g., WATER, SLEEP, WORK" value="WATER">
+                <label>Category Tag</label>
+                <input type="text" id="habit-category" placeholder="e.g., MUSIC, HEALTH" value="MUSIC">
             </div>
             <div class="editor-row">
-                <label>Unfinished Msg</label>
-                <input type="text" id="habit-todo-msg" placeholder="Warning text if not done" value="Haven't done this for 3 days!">
+                <label>Unfinished MSG</label>
+                <input type="text" id="habit-todo-msg" placeholder="Warning text to prioritize" value="Cook a new arrangement track today!">
             </div>
             <div class="editor-row">
-                <label>Finished Msg</label>
-                <input type="text" id="habit-done-msg" placeholder="Success text when filled" value="SUCCESSFULLY COMPLETED!">
+                <label>Finished MSG</label>
+                <input type="text" id="habit-done-msg" placeholder="Text when checked" value="ARRANGEMENT COMPLETED! 🔥">
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
-                <button class="btn-trigger-panel" style="font-size:0.75rem; padding: 6px;" onclick="saveHabit()">Save / Add Block</button>
-                <button class="btn-trigger-panel" style="font-size:0.75rem; padding: 6px; background:#ccc; color:#000; border-color:#ccc;" onclick="resetEditor()">Clear Form</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+                <button class="action-btn" style="padding:8px;" onclick="saveHabit()">Save Configuration</button>
+                <button class="action-btn" style="padding:8px; background:#f0f0f0; color:#333;" onclick="resetEditor()">Clear Fields</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Track the current logged date to handle cross-day auto resets
         let currentTrackingDate = new Date().toDateString();
 
         let habits = [
             {
-                id: 1710000000001,
-                icon: "💧",
-                name: "Hydration Intake",
-                category: "water",
-                todoMsg: "Haven't done this for 2 days!",
-                doneMsg: "SUCCESSFULLY COMPLETED!",
+                id: 1,
+                icon: "🎧",
+                name: "Vocal Mixing",
+                category: "music",
+                todoMsg: "Mix EQ vocal matching the beat!",
+                doneMsg: "VOCALS SATISFACTORILY MIXED!",
                 checked: false,
                 lastCheckedDate: null
             },
             {
-                id: 1710000000002,
-                icon: "😴",
-                name: "Sleep Schedule",
-                category: "sleep",
-                todoMsg: "Fix your circadian rhythm!",
-                doneMsg: "RESTED WELL TODAY!",
+                id: 2,
+                icon: "💧",
+                name: "Hydration Status",
+                category: "health",
+                todoMsg: "Drink at least 2L of Water!",
+                doneMsg: "OPTIMAL HYDRATION ACHIEVED!",
                 checked: true,
                 lastCheckedDate: new Date().toDateString()
             }
@@ -335,23 +396,28 @@
             habits.forEach(habit => {
                 const block = document.createElement('div');
                 block.className = `habit-block ${habit.checked ? 'checked' : ''}`;
-                block.setAttribute('onclick', `toggleCheck(${habit.id})`);
+                block.id = `block-${habit.id}`;
+                block.setAttribute('onclick', `toggleCheck(${habit.id}, event)`);
 
                 block.innerHTML = `
-                    <div class="action-overlay">
-                        <button class="action-btn" onclick="event.stopPropagation(); loadIntoEditor(${habit.id})">Edit</button>
-                        <button class="action-btn" style="color:red;" onclick="event.stopPropagation(); deleteHabit(${habit.id})">Del</button>
+                    <div class="fill-layer"></div>
+                    <div class="action-overlay" onclick="event.stopPropagation();">
+                        <button class="action-btn" onclick="loadIntoEditor(${habit.id})">Edit</button>
+                        <button class="action-btn" style="background:#cc3333;" onclick="deleteHabit(${habit.id})">Del</button>
                     </div>
                     <div class="habit-content">
                         <div class="icon-box">${habit.icon}</div>
                         <div class="info-box">
                             <div class="habit-title-row">
-                                <span class="habit-name">${habit.checked ? habit.name : habit.name}</span>
+                                <span class="habit-name">${habit.name}</span>
                                 <span class="category-badge">${habit.category}</span>
                             </div>
                             <div class="message-text">
                                 ${habit.checked ? habit.doneMsg : habit.todoMsg}
                             </div>
+                        </div>
+                        <div class="state-indicator">
+                            <div class="custom-checkbox"></div>
                         </div>
                     </div>
                 `;
@@ -359,12 +425,54 @@
             });
         }
 
-        function toggleCheck(id) {
+        function toggleCheck(id, event) {
             const habit = habits.find(h => h.id === id);
             if (habit) {
                 habit.checked = !habit.checked;
                 habit.lastCheckedDate = habit.checked ? new Date().toDateString() : null;
+                
                 renderHabits();
+
+                // Trigger mini firework particle explosion if successfully completed
+                if (habit.checked && event) {
+                    const blockEl = document.getElementById(`block-${id}`);
+                    createExplosion(blockEl, event.clientX, event.clientY);
+                }
+            }
+        }
+
+        // Particle System Engine (Mini Fireworks Effect)
+        function createExplosion(element, clickX, clickY) {
+            const rect = element.getBoundingClientRect();
+            // Fallback coordinate positioning relative to element if click outside scope
+            const originX = clickX ? (clickX - rect.left) : (rect.width / 2);
+            const originY = clickY ? (clickY - rect.top) : (rect.height / 2);
+
+            for (let i = 0; i < 16; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                // Pick soft glowing colors matching light explosion
+                particle.style.background = i % 2 === 0 ? '#ffffff' : '#ffeb3b'; 
+                element.appendChild(particle);
+
+                particle.style.left = `${originX}px`;
+                particle.style.top = `${originY}px`;
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 40 + Math.random() * 60;
+                const destinationX = Math.cos(angle) * velocity;
+                const destinationY = Math.sin(angle) * velocity;
+
+                particle.animate([
+                    { opacity: 1, transform: 'translate(0, 0) scale(1)' },
+                    { opacity: 0, transform: `translate(${destinationX}px, ${destinationY}px) scale(0.2)` }
+                ], {
+                    duration: 600 + Math.random() * 400,
+                    easing: 'cubic-bezier(0.1, 0.8, 0.3, 1)',
+                    fill: 'forwards'
+                });
+
+                setTimeout(() => particle.remove(), 1000);
             }
         }
 
@@ -382,23 +490,19 @@
                 document.getElementById('habit-category').value = habit.category;
                 document.getElementById('habit-todo-msg').value = habit.todoMsg;
                 document.getElementById('habit-done-msg').value = habit.doneMsg;
-                
-                const panel = document.getElementById('editor-panel');
-                panel.style.display = 'flex';
-                panel.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('editor-panel').style.display = 'flex';
             }
         }
 
         function saveHabit() {
             const id = document.getElementById('edit-id').value;
             const icon = document.getElementById('habit-icon').value || "✨";
-            const name = document.getElementById('habit-name').value || "Unnamed Habit";
-            const category = document.getElementById('habit-category').value || "GENERAL";
-            const todoMsg = document.getElementById('habit-todo-msg').value || "Not finished yet!";
+            const name = document.getElementById('habit-name').value || "New Habit";
+            const category = document.getElementById('habit-category').value || "LIFE";
+            const todoMsg = document.getElementById('habit-todo-msg').value || "Do it now!";
             const doneMsg = document.getElementById('habit-done-msg').value || "COMPLETED!";
 
             if (id) {
-                // Edit existing habit
                 const habit = habits.find(h => h.id == id);
                 if (habit) {
                     habit.icon = icon;
@@ -408,8 +512,7 @@
                     habit.doneMsg = doneMsg;
                 }
             } else {
-                // Add completely new block
-                const newHabit = {
+                habits.push({
                     id: Date.now(),
                     icon: icon,
                     name: name,
@@ -418,12 +521,11 @@
                     doneMsg: doneMsg,
                     checked: false,
                     lastCheckedDate: null
-                };
-                habits.push(newHabit);
+                });
             }
-
             renderHabits();
             resetEditor();
+            document.getElementById('editor-panel').style.display = 'none';
         }
 
         function deleteHabit(id) {
@@ -434,17 +536,11 @@
 
         function resetEditor() {
             document.getElementById('edit-id').value = '';
-            document.getElementById('habit-icon').value = '🔥';
             document.getElementById('habit-name').value = '';
-            document.getElementById('habit-category').value = 'MUSIC';
-            document.getElementById('habit-todo-msg').value = 'Keep tracking!';
-            document.getElementById('habit-done-msg').value = 'SUCCESSFULLY COMPLETED!';
+            document.getElementById('habit-todo-msg').value = '';
         }
 
-        // Check for new day cycle reset calculation every minute
         setInterval(checkDailyReset, 60000);
-
-        // Initial launch
         renderHabits();
     </script>
 </body>
