@@ -39,34 +39,58 @@ box-sizing: border-box;
 position: relative;
 }
 
-/* ช่องใส่ตัวคูณขนาดแบบมินิมอล ซ่อนอยู่มุมขวาบน */
+/* 
+  ปรับแต่งปุ่มควบคุมขนาดใหม่: 
+  ซ่อนไว้แบบเกือบจะมองไม่เห็น (Opacity 0) 
+  และจะสไลด์โผล่มาจางๆ สวยงาม (Opacity 0.8) เฉพาะตอนเอาเมาส์มาชี้มุมขวาบนเท่านั้น
+*/
 .scale-control-box {
 position: absolute;
-top: 8px;
-right: 12px;
+top: 10px;
+right: 14px;
 display: flex;
 align-items: center;
-gap: 3px;
-font-size: 0.65rem;
-font-weight: bold;
-opacity: 0.5;
-transition: opacity 0.2s;
+gap: 5px;
+font-size: 0.6rem;
+font-weight: 800;
+letter-spacing: 0.5px;
+opacity: 0; /* ซ่อนไว้ก่อน */
+transform: translateY(-3px);
+transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 z-index: 10;
+pointer-events: none; /* กันไม่ให้เผลอไปโดนตอนซ่อนอยู่ */
 }
+
+/* แสดงขึ้นมาเมื่อเลื่อนเมาส์มาโดนบริเวณมุมขวาบนของ Widget Container */
+.widget-container:hover .scale-control-box,
+.scale-control-box:focus-within {
+opacity: 0.7;
+transform: translateY(0);
+pointer-events: auto; /* ให้กดได้ตอนแสดงผล */
+}
+
 .scale-control-box:hover {
-opacity: 1;
+opacity: 1 !important;
 }
+
 .scale-input {
-width: 35px;
+width: 32px;
 background: #ffffff;
-border: 1px solid #8B0016;
-border-radius: 4px;
+border: 1.5px solid #8B0016;
+border-radius: 6px;
 color: #8B0016;
 font-size: 0.65rem;
 font-weight: bold;
 text-align: center;
 outline: none;
-padding: 1px;
+padding: 2px;
+box-shadow: 1px 1px 0px #8B0016;
+transition: all 0.2s;
+}
+
+.scale-input:focus {
+box-shadow: 2px 2px 0px #8B0016;
+background: #FDF3F2;
 }
 
 /* Editable Title Styled like a clean input */
@@ -390,13 +414,16 @@ background: #f1dbda;
 </head>
 <body>
 
+<!-- ครอบเพื่อทำระบบ Scale -->
 <div class="scaler-wrapper" id="scalerWrapper">
 <div class="widget-container">
+<!-- ตัวควบคุมขนาดมินิมอลแบบซ่อนอัตโนมัติ (จะโผล่มาเมื่อ Hover เท่านั้น) -->
 <div class="scale-control-box">
 <span>SIZE:</span>
 <input type="number" id="scaleInput" class="scale-input" value="1" step="0.1" min="0.3" max="3" oninput="changeWidgetScale(this.value)">
 </div>
 
+<!-- Editable Title Box -->
 <input type="text" id="titleInput" class="title-input" value="Focus Session" placeholder="ENTER SESSION NAME">
 
 <div class="timer-display" id="display">00:00:00</div>
@@ -409,14 +436,17 @@ background: #f1dbda;
 
 <button class="save-button" id="saveBtn" onclick="saveGame()">Record Progress</button>
 
+<!-- Saved Game Files (List) -->
 <div class="save-list-section" id="saveListSection">
 <div class="save-list-title" id="saveListToggle" onclick="toggleSaveList()">💾 Saved Files</div>
 <div class="save-list-container">
 <ul class="save-list" id="saveList">
+<!-- Save slots will be injected here -->
 </ul>
 </div>
 </div>
 
+<!-- IN-WIDGET CUSTOM MODAL FOR OVERWRITE SYSTEM -->
 <div class="custom-modal-overlay" id="customModal">
 <div class="custom-modal">
 <div class="modal-title">⚠️ Overwrite Warning</div>
@@ -466,7 +496,7 @@ renderSaves();
 /* --- DYNAMIC SCALE FUNCTION --- */
 function changeWidgetScale(val) {
 let scaleValue = parseFloat(val);
-if (isNaN(scaleValue) || scaleValue <= 0) scaleValue = 1; // กันบั๊กกรณีลบเลขทิ้ง
+if (isNaN(scaleValue) || scaleValue <= 0) scaleValue = 1; 
 scalerWrapper.style.transform = `scale(${scaleValue})`;
 localStorage.setItem('palace_stopwatch_scale', scaleValue);
 }
@@ -581,7 +611,7 @@ id: saveId,
 title: sessionName,
 timeStr: durationString,
 ms: elapsedTime,
-date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 };
 
 savedGames.unshift(newSave);
