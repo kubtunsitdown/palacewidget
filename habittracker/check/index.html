@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palace Habit Tracker</title>
+    <style>
+        :root {
+            --palace-red: #9E3640;
+            --palace-red-hover: #802b33;
+            --dark-charcoal: #1a1a1a;
+            --bg-cream: #FFF9F9; /* Matching soft pink-cream from your board */
+            --border-light: #e0d5d5;
+            --gray-text: #8a7a7a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: transparent; /* Seamless with Notion background */
+            color: var(--dark-charcoal);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 600px; /* Aligned with horizontal 5:2 ratio flow */
+            margin: 0 auto;
+        }
+
+        /* Create Habit Panel */
+        .creator-panel {
+            background: #ffffff;
+            border: 2px solid var(--dark-charcoal);
+            padding: 14px;
+            box-shadow: 4px 4px 0px var(--dark-charcoal);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .panel-row {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--dark-charcoal);
+        }
+
+        input {
+            border: 2px solid var(--dark-charcoal);
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1.2fr;
+            gap: 8px;
+        }
+
+        .btn-add {
+            background: var(--dark-charcoal);
+            color: #ffffff;
+            border: none;
+            padding: 8px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            transition: all 0.1s;
+        }
+
+        .btn-add:hover {
+            background: var(--palace-red);
+        }
+
+        /* Habits Container */
+        .habits-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* 5:2 Aspect Ratio Habit Block */
+        .habit-block {
+            aspect-ratio: 5 / 2;
+            width: 100%;
+            background: var(--bg-cream);
+            border: 2px solid var(--dark-charcoal);
+            box-shadow: 4px 4px 0px var(--dark-charcoal);
+            position: relative;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* Red Fill State when Checked */
+        .habit-block.checked {
+            background: var(--palace-red);
+            color: #ffffff;
+        }
+
+        .habit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .habit-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .habit-icon {
+            font-size: 1.5rem;
+        }
+
+        .habit-name {
+            font-size: 1.1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .streak-warning {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--palace-red);
+            background: rgba(158, 54, 64, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .checked .streak-warning {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .habit-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .state-text {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gray-text);
+        }
+
+        .checked .state-text {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Minimal Interactive Check Mark */
+        .check-indicator {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--dark-charcoal);
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 0.8rem;
+            color: var(--dark-charcoal);
+            transition: all 0.1s;
+        }
+
+        .checked .check-indicator {
+            background: #ffffff;
+            border-color: #ffffff;
+            color: var(--palace-red);
+        }
+
+        /* Delete button hidden by default, visible on hover */
+        .btn-delete {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: transparent;
+            border: none;
+            color: var(--gray-text);
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: none;
+        }
+
+        .checked .btn-delete {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .habit-block:hover .btn-delete {
+            display: block;
+        }
+
+        .notion-log {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--gray-text);
+            text-align: right;
+            margin-top: -4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Panel to Create Custom Habit -->
+    <div class="creator-panel">
+        <div class="panel-row">
+            <label>Habit</label>
+            <div style="display: grid; grid-template-columns: 50px 1fr; gap: 6px;">
+                <input type="text" id="habit-icon" placeholder="🔥" value="🔥" style="text-align: center;">
+                <input type="text" id="habit-name" placeholder="E.g., Music Production">
+            </div>
+        </div>
+        <div class="panel-row">
+            <label>Settings</label>
+            <div class="grid-3">
+                <input type="text" id="habit-todo" placeholder="If Unfinished (e.g., Cook Beat)" value="Cook Beat">
+                <input type="text" id="habit-done" placeholder="If Finished (e.g., Beat cooked!)" value="Beat cooked!">
+                <input type="number" id="habit-missed" placeholder="Days missed (e.g. 5)" value="0" min="0">
+            </div>
+        </div>
+        <button class="btn-add" onclick="createNewHabit()">Create New Habit Block</button>
+    </div>
+
+    <!-- Habit Blocks Area -->
+    <div class="habits-container" id="habits-list"></div>
+
+    <script>
+        // Set your Notion Webhook URL here if you want to sync with Make.com / Zapier
+        const NOTION_WEBHOOK_URL = ""; 
+
+        // Default Starting Habits
+        let habits = [
+            {
+                id: 1,
+                icon: "🎹",
+                name: "Beat Arrangement",
+                todoText: "Arrange 4-bar loop",
+                doneText: "Arrangement complete!",
+                daysMissed: 5,
+                checked: false
+            },
+            {
+                id: 2,
+                icon: "🎤",
+                name: "Vocal Recording",
+                todoText: "Record 1 verse",
+                doneText: "Vocals laid down!",
+                daysMissed: 0,
+                checked: true
+            }
+        ];
+
+        function renderHabits() {
+            const list = document.getElementById('habits-list');
+            list.innerHTML = '';
+
+            habits.forEach(habit => {
+                const block = document.createElement('div');
+                block.className = `habit-block ${habit.checked ? 'checked' : ''}`;
+                block.setAttribute('onclick', `toggleHabit(${habit.id})`);
+
+                // Check missed days warning text
+                let warningHTML = '';
+                if (!habit.checked && habit.daysMissed > 0) {
+                    warningHTML = `<span class="streak-warning">Haven't done this for ${habit.daysMissed} days!</span>`;
+                }
+
+                block.innerHTML = `
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteHabit(${habit.id})">✕</button>
+                    <div class="habit-header">
+                        <div class="habit-title-wrapper">
+                            <span class="habit-icon">${habit.icon}</span>
+                            <span class="habit-name">${habit.name}</span>
+                        </div>
+                        ${warningHTML}
+                    </div>
+                    <div class="habit-footer">
+                        <div class="state-text">
+                            ${habit.checked ? habit.doneText : habit.todoText}
+                        </div>
+                        <div class="check-indicator">
+                            ${habit.checked ? '✓' : ''}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(block);
+            });
+        }
+
+        function toggleHabit(id) {
+            const habit = habits.find(h => h.id === id);
+            if (habit) {
+                habit.checked = !habit.checked;
+                renderHabits();
+                
+                // Trigger sending data to Notion
+                sendToNotion(habit);
+            }
+        }
+
+        function createNewHabit() {
+            const icon = document.getElementById('habit-icon').value || "✨";
+            const name = document.getElementById('habit-name').value || "New Habit";
+            const todo = document.getElementById('habit-todo').value || "To Do";
+            const done = document.getElementById('habit-done').value || "Completed!";
+            const missed = parseInt(document.getElementById('habit-missed').value) || 0;
+
+            const newHabit = {
+                id: Date.now(),
+                icon: icon,
+                name: name,
+                todoText: todo,
+                doneText: done,
+                daysMissed: missed,
+                checked: false
+            };
+
+            habits.push(newHabit);
+            renderHabits();
+
+            // Clear Input fields
+            document.getElementById('habit-name').value = '';
+            document.getElementById('habit-missed').value = '0';
+        }
+
+        function deleteHabit(id) {
+            habits = habits.filter(h => h.id !== id);
+            renderHabits();
+        }
+
+        // Send Data to Notion Database (via Webhook Integration)
+        async function sendToNotion(habit) {
+            if (!NOTION_WEBHOOK_URL) {
+                console.log("Mock sending data to Notion:", habit);
+                return;
+            }
+
+            const payload = {
+                habitId: habit.id,
+                habitName: habit.name,
+                status: habit.checked ? "Completed" : "Unfinished",
+                date: new Date().toISOString().split('T')[0],
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch(NOTION_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+                if (response.ok) {
+                    console.log("Logged to Notion successfully!");
+                }
+            } catch (error) {
+                console.error("Failed sending to Notion API:", error);
+            }
+        }
+
+        // Initial Render
+        renderHabits();
+    </script>
+</body>
+</html>
