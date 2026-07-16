@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Palace's RPG Save Stopwatch</title>
+  <style>
+    body {
+      background-color: transparent;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      padding: 20px 0;
+      box-sizing: border-box;
+    }
+    .widget-container {
+      background: #FDF3F2; /* Creamy pastel */
+      border: 2px solid #8B0016; /* Deep Burgundy Crimson */
+      border-radius: 20px;
+      padding: 24px;
+      width: 280px;
+      text-align: center;
+      box-shadow: 4px 4px 0px #8B0016; /* Retro 2D Shadow */
+      color: #8B0016;
+      box-sizing: border-box;
+    }
+    /* Editable Title Styled like a clean input */
+    .title-input {
+      background: transparent;
+      border: none;
+      border-bottom: 2px dashed #8b001680;
+      color: #8B0016;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      width: 90%;
+      margin-bottom: 10px;
+      outline: none;
+      padding: 4px 0;
+      transition: border-color 0.2s;
+    }
+    .title-input:focus {
+      border-bottom-color: #8B0016;
+    }
+    .timer-display {
+      font-size: 3rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      margin: 5px 0 20px 0;
+      letter-spacing: 1px;
+      color: #8B0016;
+    }
+    .control-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .btn {
+      background-color: #ffffff;
+      color: #8B0016;
+      border: 2px solid #8B0016;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      flex: 1;
+      transition: all 0.2s ease;
+      box-shadow: 2px 2px 0px #8B0016;
+    }
+    .btn:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px #8B0016;
+    }
+    .btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px #8B0016;
+    }
+    .btn-start {
+      background-color: #8B0016;
+      color: #FDF3F2;
+      border: 2px solid #8B0016;
+    }
+    .btn-start:hover {
+      background-color: #a31226;
+    }
+    .save-button {
+      background-color: #f1dbda;
+      color: #b07c7c;
+      border: 2px solid #b07c7c;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: not-allowed;
+      width: 100%;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+    .save-button.active {
+      background-color: #8B0016;
+      color: #FDF3F2;
+      border: 2px solid #8B0016;
+      box-shadow: 2px 2px 0px #3c0006;
+      cursor: pointer;
+    }
+    .save-button.active:hover {
+      background-color: #a31226;
+      transform: translateY(-1px);
+    }
+    
+    /* Save Game List Section */
+    .save-list-section {
+      margin-top: 20px;
+      border-top: 2px dashed #8b001640;
+      padding-top: 15px;
+      text-align: left;
+    }
+    .save-list-title {
+      font-size: 0.75rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      color: #8B0016;
+      opacity: 0.8;
+      text-align: center;
+    }
+    .save-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    /* Custom thin scrollbar for minimalist look */
+    .save-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .save-list::-webkit-scrollbar-thumb {
+      background: #8B0016;
+      border-radius: 4px;
+    }
+    .save-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      border: 1.5px solid #8B0016;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      box-shadow: 2px 2px 0px #8B0016;
+    }
+    .save-info {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 120px;
+    }
+    .save-name {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #8B0016;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .save-time {
+      font-size: 0.7rem;
+      color: #8b0016a0;
+    }
+    .save-actions {
+      display: flex;
+      gap: 5px;
+    }
+    .action-btn {
+      background: #ffffff;
+      border: 1.5px solid #8B0016;
+      border-radius: 6px;
+      color: #8B0016;
+      font-size: 0.7rem;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 3px 6px;
+      transition: all 0.2s;
+    }
+    .action-btn:hover {
+      background: #8B0016;
+      color: #FDF3F2;
+    }
+    .btn-delete {
+      border-color: #999;
+      color: #999;
+    }
+    .btn-delete:hover {
+      background: #e0e0e0;
+      color: #333;
+      border-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<div class="widget-container">
+  <!-- Editable Title Box -->
+  <input type="text" id="titleInput" class="title-input" value="Focus Session" placeholder="ENTER SESSION NAME">
+  
+  <div class="timer-display" id="display">00:00:00</div>
+  
+  <div class="control-buttons">
+    <button class="btn btn-start" id="startBtn" onclick="startTimer()">Start</button>
+    <button class="btn" id="pauseBtn" onclick="pauseTimer()" style="display:none;">Pause</button>
+    <button class="btn" id="resetBtn" onclick="resetTimer()">Reset</button>
+  </div>
+  
+  <button class="save-button" id="saveBtn" onclick="saveGame()" disabled>Save Game</button>
+
+  <!-- Saved Game Files (List) -->
+  <div class="save-list-section">
+    <div class="save-list-title">💾 Saved Files</div>
+    <ul class="save-list" id="saveList">
+      <!-- Save slots will be injected here -->
+    </ul>
+  </div>
+</div>
+
+<script>
+  let startTime = 0;
+  let elapsedTime = 0;
+  let timerInterval;
+  let isRunning = false;
+
+  const display = document.getElementById('display');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const titleInput = document.getElementById('titleInput');
+  const saveList = document.getElementById('saveList');
+
+  // Load saves from LocalStorage on start
+  let savedGames = JSON.parse(localStorage.getItem('palace_stopwatch_saves')) || [];
+  renderSaves();
+
+  function timeToString(time) {
+    let diffInHrs = time / 3600000;
+    let hh = Math.floor(diffInHrs);
+
+    let diffInMin = (diffInHrs - hh) * 60;
+    let mm = Math.floor(diffInMin);
+
+    let diffInSec = (diffInMin - mm) * 60;
+    let ss = Math.floor(diffInSec);
+
+    let formattedHH = hh.toString().padStart(2, "0");
+    let formattedMM = mm.toString().padStart(2, "0");
+    let formattedSS = ss.toString().padStart(2, "0");
+
+    return `${formattedHH}:${formattedMM}:${formattedSS}`;
+  }
+
+  function startTimer() {
+    if (isRunning) return;
+    isRunning = true;
+    startTime = Date.now() - elapsedTime;
+    timerInterval = setInterval(function printTime() {
+      elapsedTime = Date.now() - startTime;
+      display.innerHTML = timeToString(elapsedTime);
+    }, 1000);
+
+    startBtn.style.display = "none";
+    pauseBtn.style.display = "block";
+    
+    saveBtn.classList.remove('active');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = 'Save Game';
+  }
+
+  function pauseTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    startBtn.style.display = "block";
+    startBtn.innerHTML = "Resume";
+    pauseBtn.style.display = "none";
+
+    if (elapsedTime > 0) {
+      saveBtn.classList.add('active');
+      saveBtn.disabled = false;
+    }
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    elapsedTime = 0;
+    display.innerHTML = "00:00:00";
+    startBtn.style.display = "block";
+    startBtn.innerHTML = "Start";
+    pauseBtn.style.display = "none";
+
+    saveBtn.classList.remove('active');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = 'Save Game';
+  }
+
+  // --- SAVE GAME SYSTEM ---
+  function saveGame() {
+    if (elapsedTime === 0 || isRunning) return;
+
+    const sessionName = titleInput.value.trim() || "Untitled Session";
+    const durationString = timeToString(elapsedTime);
+    const saveId = Date.now(); // Unique ID using timestamp
+
+    // Create a new Save object
+    const newSave = {
+      id: saveId,
+      title: sessionName,
+      timeStr: durationString,
+      ms: elapsedTime,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    };
+
+    // Add to local array and save to storage
+    savedGames.unshift(newSave); // Add to the top of the list
+    localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+
+    // Refresh the UI list
+    renderSaves();
+
+    // Reset stopwatch after saving
+    resetTimer();
+
+    // Optional Notion Webhook Trigger (Active if URL is set)
+    sendToNotionDatabase(newSave);
+  }
+
+  function renderSaves() {
+    saveList.innerHTML = '';
+    
+    if (savedGames.length === 0) {
+      saveList.innerHTML = '<li style="text-align:center; font-size:0.75rem; color:#8b001680; padding: 10px;">No saved files found.</li>';
+      return;
+    }
+
+    savedGames.forEach(game => {
+      const li = document.createElement('li');
+      li.className = 'save-item';
+      li.innerHTML = `
+        <div class="save-info">
+          <span class="save-name" title="${game.title}">${game.title}</span>
+          <span class="save-time">${game.timeStr} (${game.date})</span>
+        </div>
+        <div class="save-actions">
+          <button class="action-btn" onclick="loadGame(${game.id})">Load</button>
+          <button class="action-btn btn-delete" onclick="deleteGame(${game.id})">✕</button>
+        </div>
+      `;
+      saveList.appendChild(li);
+    });
+  }
+
+  // --- LOAD GAME SYSTEM ---
+  function loadGame(id) {
+    const targetGame = savedGames.find(g => g.id === id);
+    if (!targetGame) return;
+
+    // Pause current run if any
+    clearInterval(timerInterval);
+    isRunning = false;
+
+    // Load values back into stopwatch variables
+    elapsedTime = targetGame.ms;
+    display.innerHTML = targetGame.timeStr;
+    titleInput.value = targetGame.title;
+
+    // Adjust button states
+    startBtn.style.display = "block";
+    startBtn.innerHTML = "Resume";
+    pauseBtn.style.display = "none";
+    
+    // Enable save button in case they want to modify and re-save
+    saveBtn.classList.add('active');
+    saveBtn.disabled = false;
+  }
+
+  function deleteGame(id) {
+    savedGames = savedGames.filter(g => g.id !== id);
+    localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+    renderSaves();
+  }
+
+  // --- WEBHOOK TO NOTION (OPTIONAL) ---
+  function sendToNotionDatabase(saveData) {
+    const webhookUrl = 'YOUR_WEBHOOK_URL_HERE'; // Replace with Make/Zapier URL if using
+    
+    if (webhookUrl === 'YOUR_WEBHOOK_URL_HERE') return;
+
+    fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task: saveData.title,
+        duration: saveData.timeStr,
+        minutes: Math.round(saveData.ms / 60000),
+        date: new Date().toISOString().split('T')[0]
+      })
+    }).catch(err => console.error('Database Sync Error:', err));
+  }
+</script>
+
+</body>
+</html>
