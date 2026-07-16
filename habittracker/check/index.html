@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palace Premium Notion Tracker</title>
+    <title>Palace Premium Notion Tracker - Red Edition</title>
     <style>
         :root {
             --palace-red: #9E3640;
+            --palace-red-light: rgba(158, 54, 64, 0.1);
             --dark-charcoal: #1a1a1a;
             --bg-cream: #ffffff; 
             --gray-sub: #666666;
-            --gray-light: #f3f3f3;
         }
 
         * {
@@ -37,10 +37,10 @@
             flex-direction: column;
             gap: 16px;
             width: 100%;
-            max-width: 550px; /* ยืดหยุ่นตาม Notion แต่กว้างสุดไม่เกินขนาดเดิม */
+            max-width: 550px;
         }
 
-        /* Original Minimal Luxurious Design but Responsive */
+        /* Original Minimal Luxurious Frame */
         .habit-block {
             width: 100%;
             height: 130px;
@@ -61,6 +61,23 @@
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         }
 
+        /* Top Corner Status Light */
+        .status-dot {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 6px;
+            height: 6px;
+            background: var(--palace-red);
+            border-radius: 50%;
+            z-index: 2;
+            transition: opacity 0.3s ease;
+        }
+
+        .habit-block.checked .status-dot {
+            opacity: 0; /* ซ่อนไฟแดงเมื่อทำเสร็จ */
+        }
+
         /* Premium Fill Animation */
         .fill-layer {
             position: absolute;
@@ -79,7 +96,7 @@
             clip-path: circle(120% at 90% 50%);
         }
 
-        /* Dynamic Flex Structure (Prevents layout break in Notion) */
+        /* Flex Layout Alignment for Notion */
         .habit-content {
             position: relative;
             z-index: 2;
@@ -101,7 +118,7 @@
             align-items: center;
             gap: 16px;
             flex: 1;
-            min-width: 0; /* ป้องกันกล่องข้อความดันหน้าต่าง */
+            min-width: 0;
         }
 
         .icon-box {
@@ -144,43 +161,40 @@
             text-overflow: ellipsis;
         }
 
+        /* ปรับดีไซน์ Tag ให้มีสีแดงจางๆ ในสถานะปกติ */
         .category-badge {
             font-size: 0.6rem;
             font-weight: 800;
-            background: var(--gray-light);
-            color: #444;
+            background: var(--palace-red-light);
+            color: var(--palace-red);
             padding: 2px 8px;
             border-radius: 20px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             flex-shrink: 0;
+            transition: background 0.4s, color 0.4s;
         }
 
         .habit-block.checked .habit-name { color: rgba(255, 255, 255, 0.7); }
         .habit-block.checked .category-badge { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
 
-        /* Prominent & Limited Character Message */
+        /* Primary Message Text */
         .message-text {
             font-size: 1.35rem;
             font-weight: 800;
             color: var(--dark-charcoal);
             line-height: 1.25;
             letter-spacing: -0.2px;
-            position: relative;
-            display: inline-block;
-            
-            /* จำกัดความสูงแค่ 2 บรรทัดพอ ป้องกันหลุดขอบดีไซน์ */
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
             word-break: break-word;
-            
             transition: color 0.4s ease, transform 0.4s ease;
         }
 
-        /* เมื่อสำเร็จ ให้คาดข้อความอย่างชัดเจน */
+        /* พาดข้อความเมื่อสำเร็จอย่างพรีเมียม */
         .habit-block.checked .message-text {
             color: rgba(255, 255, 255, 0.65);
             text-decoration: line-through;
@@ -188,7 +202,7 @@
             text-decoration-thickness: 3px;
         }
 
-        /* Custom Checkbox Indicator */
+        /* Custom Checkbox - เติมกรอบแดงตามบรีฟใหม่ */
         .state-indicator {
             display: flex;
             align-items: center;
@@ -199,7 +213,7 @@
         .custom-checkbox {
             width: 28px;
             height: 28px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--palace-red); /* กรอบแดงในสถานะดั้งเดิม */
             border-radius: 50%;
             background: #fff;
             display: flex;
@@ -209,7 +223,7 @@
         }
 
         .habit-block.checked .custom-checkbox {
-            border-color: #ffffff;
+            border-color: #ffffff; /* เปลี่ยนเป็นสีขาวล้วนเมื่อสำเร็จ */
             background: #ffffff;
             transform: scale(1.1);
         }
@@ -229,7 +243,7 @@
             transform: scale(1);
         }
 
-        /* Stealth controls overlay */
+        /* Stealth action controls overlay */
         .action-overlay {
             position: absolute;
             left: 10px;
@@ -264,7 +278,7 @@
             z-index: 99;
         }
 
-        /* Stealth Config Dot Trigger */
+        /* Stealth Config Node Anchor */
         .bottom-controls {
             width: 100%;
             max-width: 550px;
@@ -326,7 +340,7 @@
 
     <div class="habits-container" id="habits-list"></div>
 
-    <!-- Hidden Setup Node -->
+    <!-- Invisible trigger node at bottom -->
     <div class="bottom-controls">
         <button class="btn-hidden-trigger" onclick="toggleEditorPanel()"></button>
         
@@ -390,11 +404,11 @@
                 block.id = `block-${habit.id}`;
                 block.setAttribute('onclick', `toggleCheck(${habit.id}, event)`);
 
-                // สลับไอคอนดั้งเดิมไปเป็น พลุฉลอง 🎉 ทันทีตามใจสั่ง
                 const finalIcon = habit.checked ? "🎉" : habit.icon;
 
                 block.innerHTML = `
                     <div class="fill-layer"></div>
+                    <div class="status-dot"></div>
                     <div class="action-overlay" onclick="event.stopPropagation();">
                         <button class="action-btn" onclick="loadIntoEditor(${habit.id})">Edit</button>
                         <button class="action-btn" style="background:#cc3333;" onclick="deleteHabit(${habit.id})">Del</button>
