@@ -17,6 +17,7 @@
       box-sizing: border-box;
     }
     .widget-container {
+      position: relative; /* For Overlay Alert positioning */
       background: #FDF3F2; /* Creamy pastel */
       border: 2px solid #8B0016; /* Deep Burgundy Crimson */
       border-radius: 20px;
@@ -26,6 +27,7 @@
       box-shadow: 4px 4px 0px #8B0016; /* Retro 2D Shadow */
       color: #8B0016;
       box-sizing: border-box;
+      overflow: hidden; /* Keep modal within rounded corners */
     }
     /* Editable Title Styled like a clean input */
     .title-input {
@@ -67,7 +69,7 @@
       border: 2px solid #8B0016;
       border-radius: 12px;
       padding: 10px;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       font-weight: bold;
       text-transform: uppercase;
       cursor: pointer;
@@ -264,6 +266,84 @@
       color: #333;
       border-color: #333;
     }
+
+    /* CUSTOM IN-WIDGET MODAL DIALOG */
+    .custom-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(139, 0, 22, 0.4); /* Burgundy backdrop tint */
+      backdrop-filter: blur(2px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .custom-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .custom-modal {
+      background: #FDF3F2;
+      border: 2px solid #8B0016;
+      border-radius: 16px;
+      padding: 18px;
+      width: 80%;
+      box-shadow: 4px 4px 0px #3c0006;
+      transform: scale(0.9);
+      transition: transform 0.25s ease;
+    }
+    .custom-overlay.active .custom-modal {
+      transform: scale(1);
+    }
+    .modal-title {
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #8B0016;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .modal-msg {
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: #8b0016cf;
+      margin-bottom: 15px;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-btn {
+      flex: 1;
+      padding: 8px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      border: 1.5px solid #8B0016;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .modal-btn-confirm {
+      background: #8B0016;
+      color: #FDF3F2;
+    }
+    .modal-btn-confirm:hover {
+      background: #a31226;
+    }
+    .modal-btn-cancel {
+      background: #ffffff;
+      color: #8B0016;
+    }
+    .modal-btn-cancel:hover {
+      background: #f1dbda;
+    }
   </style>
 </head>
 <body>
@@ -275,20 +355,32 @@
   <div class="timer-display" id="display">00:00:00</div>
   
   <div class="control-buttons">
-    <button class="btn btn-start" id="startBtn" onclick="startTimer()">Initiate</button>
-    <button class="btn" id="pauseBtn" onclick="pauseTimer()" style="display:none;">Halt</button>
+    <button class="btn btn-start" id="startBtn" onclick="startTimer()">Start</button>
+    <button class="btn" id="pauseBtn" onclick="pauseTimer()" style="display:none;">Pause</button>
     <button class="btn" id="resetBtn" onclick="resetTimer()">Reset</button>
   </div>
   
   <button class="save-button" id="saveBtn" onclick="saveGame()" disabled>Record Progress</button>
 
-  <!-- Saved Game Files (List) -->
-  <div class="save-list-section" id="saveListSection">
+  <!-- Saved Game Files (List) - Collapsed by Default -->
+  <div class="save-list-section collapsed" id="saveListSection">
     <div class="save-list-title" id="saveListToggle" onclick="toggleSaveList()">💾 Saved Files</div>
     <div class="save-list-container">
       <ul class="save-list" id="saveList">
         <!-- Save slots will be injected here -->
       </ul>
+    </div>
+  </div>
+
+  <!-- Custom Retro Modal Alert Overlay -->
+  <div class="custom-overlay" id="customAlertOverlay">
+    <div class="custom-modal">
+      <div class="modal-title">⚠️ Name Duplicate</div>
+      <div class="modal-msg" id="modalMsg">A record with this name already exists. Overwrite?</div>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-confirm" id="btnConfirmOverwrite">Overwrite</button>
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
+      </div>
     </div>
   </div>
 </div>
@@ -298,6 +390,7 @@
   let elapsedTime = 0;
   let timerInterval;
   let isRunning = false;
+  let pendingSaveObject = null; // Holds save info temporarily for the custom modal decision
 
   const display = document.getElementById('display');
   const startBtn = document.getElementById('startBtn');
@@ -306,13 +399,22 @@
   const titleInput = document.getElementById('titleInput');
   const saveList = document.getElementById('saveList');
   const saveListSection = document.getElementById('saveListSection');
+  const alertOverlay = document.getElementById('customAlertOverlay');
+  const modalMsg = document.getElementById('modalMsg');
+  const btnConfirmOverwrite = document.getElementById('btnConfirmOverwrite');
 
   // Load saves and collapse state from LocalStorage on start
   let savedGames = JSON.parse(localStorage.getItem('palace_stopwatch_saves')) || [];
-  let isCollapsed = JSON.parse(localStorage.getItem('palace_stopwatch_collapsed')) || false;
+  
+  // Custom default behavior: Set to "collapsed" by default unless explicitly saved otherwise
+  let isCollapsed = localStorage.getItem('palace_stopwatch_collapsed') !== null 
+    ? JSON.parse(localStorage.getItem('palace_stopwatch_collapsed')) 
+    : true; // Default to true (collapsed) on fresh start
   
   if (isCollapsed) {
     saveListSection.classList.add('collapsed');
+  } else {
+    saveListSection.classList.remove('collapsed');
   }
   renderSaves();
 
@@ -368,7 +470,7 @@
     elapsedTime = 0;
     display.innerHTML = "00:00:00";
     startBtn.style.display = "block";
-    startBtn.innerHTML = "Initiate";
+    startBtn.innerHTML = "Start";
     pauseBtn.style.display = "none";
 
     saveBtn.classList.remove('active');
@@ -381,7 +483,40 @@
     localStorage.setItem('palace_stopwatch_collapsed', saveListSection.classList.contains('collapsed'));
   }
 
-  // --- SAVE GAME SYSTEM WITH OVERWRITE WARNING ---
+  // --- OVERLAY MODAL ACTIONS ---
+  function openModal(sessionName) {
+    modalMsg.innerHTML = `"${sessionName}" already exists.<br>Do you want to overwrite it with your new progress?`;
+    alertOverlay.classList.add('active');
+  }
+
+  function closeModal() {
+    alertOverlay.classList.remove('active');
+    pendingSaveObject = null;
+  }
+
+  function executeOverwrite() {
+    if (!pendingSaveObject) return;
+
+    const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === pendingSaveObject.title.toLowerCase());
+    
+    if (existingIndex !== -1) {
+      savedGames[existingIndex].timeStr = pendingSaveObject.timeStr;
+      savedGames[existingIndex].ms = pendingSaveObject.ms;
+      savedGames[existingIndex].date = pendingSaveObject.date;
+
+      localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+      renderSaves();
+      resetTimer();
+      sendToNotionDatabase(savedGames[existingIndex]);
+    }
+    closeModal();
+  }
+
+  // Set event listener for confirm modal
+  btnConfirmOverwrite.addEventListener('click', executeOverwrite);
+
+
+  // --- SAVE GAME SYSTEM WITH IN-WIDGET WARNING ---
   function saveGame() {
     if (elapsedTime === 0 || isRunning) return;
 
@@ -389,42 +524,31 @@
     const durationString = timeToString(elapsedTime);
     const saveId = Date.now();
 
-    // Check for duplicate names
-    const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === sessionName.toLowerCase());
-
-    if (existingIndex !== -1) {
-      // Prompt for Overwrite
-      const confirmOverwrite = confirm(`[OVERWRITE WARNING]\nA record named "${sessionName}" already exists.\n\nPress OK to overwrite this record with your new progress, or CANCEL to return and change your session name.`);
-      
-      if (confirmOverwrite) {
-        // Overwrite existing record
-        savedGames[existingIndex].timeStr = durationString;
-        savedGames[existingIndex].ms = elapsedTime;
-        savedGames[existingIndex].date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        
-        localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
-        renderSaves();
-        resetTimer();
-        sendToNotionDatabase(savedGames[existingIndex]);
-      }
-      return; // Do nothing and return if they click Cancel
-    }
-
-    // Create a brand new Save object if no duplicate
-    const newSave = {
-      id: saveId,
+    const preparedSave = {
       title: sessionName,
       timeStr: durationString,
       ms: elapsedTime,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     };
 
-    savedGames.unshift(newSave);
+    // Check for duplicate names
+    const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === sessionName.toLowerCase());
+
+    if (existingIndex !== -1) {
+      // Trigger the Custom Modal rather than standard browser prompt
+      pendingSaveObject = preparedSave;
+      openModal(sessionName);
+      return;
+    }
+
+    // Save as brand new if no duplicate
+    preparedSave.id = saveId;
+    savedGames.unshift(preparedSave);
     localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
 
     renderSaves();
     resetTimer();
-    sendToNotionDatabase(newSave);
+    sendToNotionDatabase(preparedSave);
   }
 
   // --- EDIT SAVE NAME ON THE FLY ---
@@ -439,7 +563,6 @@
     input.className = 'save-name-input';
     input.value = currentName;
 
-    // Hide edit icon while editing
     if (editIcon) editIcon.style.display = 'none';
 
     nameSpan.replaceWith(input);
@@ -448,20 +571,17 @@
 
     const saveNewName = () => {
       const newName = input.value.trim() || "Untitled Session";
-      
-      // Update data in array
       const gameIndex = savedGames.findIndex(g => g.id === id);
       if (gameIndex !== -1) {
         savedGames[gameIndex].title = newName;
         localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
       }
-      
       renderSaves();
     };
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') saveNewName();
-      if (e.key === 'Escape') renderSaves(); // Revert without saving
+      if (e.key === 'Escape') renderSaves();
     });
 
     input.addEventListener('blur', saveNewName);
@@ -516,6 +636,7 @@
   }
 
   function deleteGame(id) {
+    // Standard prompt is OK here, but we can also safely use it or proceed.
     if (confirm("Delete this record permanently?")) {
       savedGames = savedGames.filter(g => g.id !== id);
       localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
