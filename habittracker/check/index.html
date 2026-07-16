@@ -46,7 +46,6 @@
             height: 130px;
             background: var(--bg-cream);
             border-radius: 16px;
-            /* เปลี่ยนเงาเป็นสีแดง Palace Red ฟุ้งๆ ดูพรีเมียม */
             box-shadow: 0 4px 24px rgba(158, 54, 64, 0.12);
             position: relative;
             display: flex;
@@ -136,14 +135,12 @@
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* ย้อมสีเฉพาะไอคอนปกติ (ก่อนทำเสร็จ) ให้กลายเป็นเงาแดงล้วน */
         .icon-silhouette {
             position: relative;
             left: -100px;
             filter: drop-shadow(100px 0 0 var(--palace-red));
         }
 
-        /* เมื่อสำเร็จแล้ว ปล่อยให้ไอคอนพลุ 🎉 แสดงสีสันดั้งเดิมตามธรรมชาติ */
         .habit-block.checked .icon-box {
             transform: scale(1.15) rotate(-5deg);
         }
@@ -163,10 +160,11 @@
             gap: 10px;
         }
 
+        /* เปลี่ยน Name ให้เป็นสีแดง Palace Red ก่อนทำสำเร็จ */
         .habit-name {
             font-size: 0.85rem;
             font-weight: 700;
-            color: var(--gray-sub);
+            color: var(--palace-red);
             text-transform: uppercase;
             letter-spacing: 0.8px;
             white-space: nowrap;
@@ -187,6 +185,7 @@
             transition: background 0.4s, color 0.4s;
         }
 
+        /* เมื่อทำสำเร็จแล้ว จะปรับเป็นสีขาวเคลียร์ๆ ให้เข้ากับธีม */
         .habit-block.checked .habit-name { color: rgba(255, 255, 255, 0.7); }
         .habit-block.checked .category-badge { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
 
@@ -414,7 +413,6 @@
                 block.id = `block-${habit.id}`;
                 block.setAttribute('onclick', `toggleCheck(${habit.id}, event)`);
 
-                // สร้างโครงสร้างสำหรับย้อมสีไอคอนเป็นเงาแดง (ยกเว้นไอคอนพลุ 🎉 จะได้สีปกติ)
                 const iconHTML = habit.checked 
                     ? `<span>🎉</span>` 
                     : `<span class="icon-silhouette">${habit.icon}</span>`;
