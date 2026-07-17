@@ -188,6 +188,12 @@ body {
 .webhook-status { font-size: 0.65rem; font-weight: 700; grid-column: 1 / -1; margin-top: 2px; }
 .webhook-status.ok { color: #2e7d32; }
 .webhook-status.warn { color: var(--palace-red); }
+.version-tag {
+  font-size: 0.6rem;
+  color: #bbb;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+}
 </style>
 </head>
 <body>
@@ -251,9 +257,15 @@ body {
     </div>
     <button class="action-btn" style="padding:8px; background:var(--palace-red);" onclick="saveWebhookUrl()">Save Webhook URL</button>
   </div>
+  <div class="version-tag" id="version-tag"></div>
 </div>
 
 <script>
+// 🏷️ Bump this whenever you edit this file — makes it easy to confirm
+// which version is actually loaded inside the Notion embed (check console
+// or the tiny gray label under the widget).
+const APP_VERSION = "1.3.0";
+
 let globalVolume = parseFloat(localStorage.getItem('habit_sine_volume')) || 0.7;
 
 // 🚨 Default webhook, overridden by whatever is saved in the editor panel (localStorage)
@@ -261,6 +273,58 @@ const DEFAULT_WEBHOOK_URL = "https://hook.us2.make.com/anlwop8m5e5xniu2smpkl76yc
 
 function getWebhookUrl() {
   return localStorage.getItem('habit_webhook_url') || DEFAULT_WEBHOOK_URL;
+}
+
+// 📅 Local (not UTC) YYYY-MM-DD, so the "day" matches what the user actually
+// sees on their clock rather than flipping over at UTC midnight.
+function getDateKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+let currentDateKey = getDateKey();
+
+// ✅/🗑️ Per-day check state and per-day Notion page id are both scoped by
+// date, so a new day always starts unchecked, and we never try to delete a
+// page that belongs to a previous day.
+function checkedStorageKey(habit) { return `habit_state_${currentDateKey}_${habit.id}`; }
+function pageIdStorageKey(habit) { return `habit_pageid_${currentDateKey}_${habit.id}`; }
+
+function loadCheckedStateForToday() {
+  habits.forEach(h => {
+    h.checked = localStorage.getItem(checkedStorageKey(h)) === '1';
+  });
+}
+
+function saveCheckedState(habit) {
+  localStorage.setItem(checkedStorageKey(habit), habit.checked ? '1' : '0');
+}
+
+function getStoredPageId(habit) {
+  return localStorage.getItem(pageIdStorageKey(habit));
+}
+function setStoredPageId(habit, pageId) {
+  localStorage.setItem(pageIdStorageKey(habit), pageId);
+}
+function clearStoredPageId(habit) {
+  localStorage.removeItem(pageIdStorageKey(habit));
+}
+
+// ⏰ Poll for a day rollover (the widget stays open inside a Notion embed
+// for hours, so we can't rely on a page reload to notice midnight passed).
+function watchForDayRollover() {
+  setInterval(() => {
+    const freshKey = getDateKey();
+    if (freshKey !== currentDateKey) {
+      currentDateKey = freshKey;
+      loadCheckedStateForToday();
+      renderHabits();
+      console.log(`[HabitTracker ${APP_VERSION}] New day detected (${currentDateKey}) — checkmarks reset.`);
+    }
+  }, 60 * 1000);
 }
 
 let habits = [
@@ -305,36 +369,35 @@ function playSatisfyingDongSound() {
   osc.stop(now + 0.85);
 }
 
-// 📡 Send a completed habit to the Notion database (via Make.com webhook)
-// Field names below are chosen to match your Notion table columns:
-//   Name (title)  <- habit.name
-//   Date (date)   <- completedAt
-//   habit (select)<- habit.name
-//   category (select) <- habit.category
-// In Make.com's Notion "Create a Database Item" module, map each Notion
-// column to the matching key below (Name -> {{1.name}}, Date -> {{1.completedAt}},
-// habit -> {{1.habit}}, category -> {{1.category}}). Notion will automatically
-// create a new select option if the value doesn't already exist in that column,
-// as long as your Make.com "habit"/"category" field mapping is set to a plain
-// text/search value rather than a fixed dropdown choice.
-function sendToNotionDatabase(habit) {
+// 📡 Create a Notion page when a habit is checked done.
+// Field names match your Notion table columns:
+//   Name (title)      <- name
+//   Date (date)       <- completedAt
+//   habit (select)    <- habit
+//   category (select) <- category
+// The Make.com scenario needs an "action" Router: this call sends
+// action: "create". IMPORTANT — for delete-on-uncheck to work, the Create
+// branch in Make must end with a "Webhooks > Webhook response" module that
+// replies with JSON like {"pageId": "{{2.id}}"} (2 = the Notion Create
+// module), so this widget can remember which page to remove later.
+function createNotionEntry(habit) {
   const webhookUrl = getWebhookUrl();
-
   if (!webhookUrl || webhookUrl === "YOUR_WEBHOOK_URL") {
-    console.log("Database Integration Ready: Webhook URL not set yet.");
+    console.log(`[HabitTracker ${APP_VERSION}] Webhook URL not set yet.`);
     return;
   }
 
   const now = new Date();
-
   const data = {
+    action: "create",
     habitId: habit.id,
     name: habit.name,          // -> Notion "Name" (title)
     habit: habit.name,         // -> Notion "habit" (select)
     category: habit.category,  // -> Notion "category" (select)
-    date: now.toISOString().slice(0, 10), // -> Notion "Date" (date only, e.g. 2026-07-17)
+    date: currentDateKey,                 // -> Notion "Date" (date only)
     completedAt: now.toISOString(),       // full timestamp, in case you want time too
-    status: "Completed"
+    status: "Completed",
+    version: APP_VERSION
   };
 
   fetch(webhookUrl, {
@@ -342,8 +405,49 @@ function sendToNotionDatabase(habit) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   })
-    .then(res => console.log("Notion History Created successfully!"))
-    .catch(err => console.error("Database communication error:", err));
+    .then(res => res.json().catch(() => null))
+    .then(result => {
+      if (result && result.pageId) {
+        setStoredPageId(habit, result.pageId);
+        console.log(`[HabitTracker ${APP_VERSION}] Created page ${result.pageId} for "${habit.name}"`);
+      } else {
+        console.warn(`[HabitTracker ${APP_VERSION}] Created, but no pageId came back — unchecking today won't be able to auto-delete this entry until Make.com is set up to respond with { "pageId": ... }.`);
+      }
+    })
+    .catch(err => console.error("Create error:", err));
+}
+
+// 🗑️ Delete the matching Notion page when a habit is unchecked the same day
+// (i.e. "กดผิด"). Requires a "Delete" route in the same Make.com scenario,
+// triggered when action === "delete", that archives/deletes the page whose
+// id is {{1.pageId}}.
+function deleteNotionEntry(habit) {
+  const webhookUrl = getWebhookUrl();
+  if (!webhookUrl || webhookUrl === "YOUR_WEBHOOK_URL") return;
+
+  const pageId = getStoredPageId(habit);
+  if (!pageId) {
+    console.warn(`[HabitTracker ${APP_VERSION}] No stored page id for "${habit.name}" today — nothing to delete (either it was never created, or the widget reloaded and lost track).`);
+    return;
+  }
+
+  const data = {
+    action: "delete",
+    habitId: habit.id,
+    pageId: pageId,
+    version: APP_VERSION
+  };
+
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  })
+    .then(() => {
+      clearStoredPageId(habit);
+      console.log(`[HabitTracker ${APP_VERSION}] Deleted page ${pageId} for "${habit.name}"`);
+    })
+    .catch(err => console.error("Delete error:", err));
 }
 
 function renderHabits() {
@@ -398,13 +502,18 @@ function toggleCheck(id, event) {
     if (event.target.classList.contains('action-btn')) return;
     habit.checked = !habit.checked;
     renderHabits();
+    saveCheckedState(habit);
+
     if (habit.checked) {
       playSatisfyingDongSound();
-      sendToNotionDatabase(habit);
+      createNotionEntry(habit);
       if (event) {
         const blockEl = document.getElementById(`block-${id}`);
         createExplosion(blockEl, event.clientX, event.clientY);
       }
+    } else {
+      // Unchecked same day = "กดผิด" → remove the page we just created.
+      deleteNotionEntry(habit);
     }
   }
 }
@@ -538,7 +647,13 @@ function resetEditor() {
   document.getElementById('habit-done-msg').value = '';
 }
 
+loadCheckedStateForToday();
 renderHabits();
+watchForDayRollover();
+
+const versionEl = document.getElementById('version-tag');
+if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
+console.log(`[HabitTracker] loaded ${APP_VERSION} — today's key: ${currentDateKey}`);
 </script>
 </body>
 </html>
