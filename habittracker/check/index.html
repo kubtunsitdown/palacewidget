@@ -296,13 +296,13 @@
             transition-delay: 0.2s;
         }
 
-        /* Editor Overlay Settings */
+        /* Editor Overlay Settings (ปลอดภัยจากขอบตัด) */
         .action-overlay {
             position: absolute;
-            left: 10px;
-            top: -12px;
+            right: 14px;
+            bottom: 14px;
             display: none;
-            gap: 4px;
+            gap: 6px;
             z-index: 10;
         }
 
@@ -310,15 +310,27 @@
             display: flex;
         }
 
+        /* ซ่อนปุ่มแก้ไขเมื่อทำงานสำเร็จแล้ว */
+        .habit-block.checked:hover .action-overlay {
+            display: none;
+        }
+
         .action-btn {
             background: var(--dark-charcoal);
             color: white;
             border: none;
-            padding: 3px 8px;
+            padding: 4px 10px;
             font-size: 0.65rem;
             font-weight: 700;
             border-radius: 6px;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
         }
 
         .particle {
@@ -447,8 +459,8 @@
     <script>
         let globalVolume = parseFloat(localStorage.getItem('habit_sine_volume')) || 0.7;
         
-        // 🚨 วาง URL Webhook ของคุณตรงนี้เพื่อส่งข้อมูลเข้า Database
-        const N_WEBHOOK_URL = "YOUR_WEBHOOK_URL";
+        // 🚨 Webhook URL ล่าสุดของคุณได้รับการอัปเดตตรงนี้แล้วครับ
+        const N_WEBHOOK_URL = "https://hook.us2.make.com/anlwop8m5e5xniu2smpkl76ycpxez3i9";
 
         let habits = [
             {
@@ -542,10 +554,6 @@
                 block.innerHTML = `
                     <div class="fill-layer"></div>
                     <div class="status-dot"></div>
-                    <div class="action-overlay" onclick="event.stopPropagation();">
-                        <button class="action-btn" onclick="loadIntoEditor(${habit.id})">Edit</button>
-                        <button class="action-btn" style="background:#cc3333;" onclick="deleteHabit(${habit.id})">Del</button>
-                    </div>
                     <div class="habit-content">
                         <div class="left-core">
                             <div class="icon-box">${iconHTML}</div>
@@ -566,6 +574,11 @@
                         <div class="state-indicator">
                             <div class="custom-checkbox"></div>
                         </div>
+                        <!-- ย้ายเข้ามาอยู่ด้านใน habit-content เพื่อป้องกันปัญหากรอบตัด (overflow:hidden) -->
+                        <div class="action-overlay" onclick="event.stopPropagation();">
+                            <button class="action-btn" onclick="loadIntoEditor(${habit.id})">Edit</button>
+                            <button class="action-btn" style="background:#cc3333;" onclick="deleteHabit(${habit.id})">Del</button>
+                        </div>
                     </div>
                 `;
                 list.appendChild(block);
@@ -575,6 +588,9 @@
         function toggleCheck(id, event) {
             const habit = habits.find(h => h.id === id);
             if (habit) {
+                // หากกดตรงปุ่ม Edit หรือ Delete ไม่ให้ส่งผลกับการ Check
+                if (event.target.classList.contains('action-btn')) return;
+
                 habit.checked = !habit.checked;
                 renderHabits();
 
