@@ -194,6 +194,30 @@ body {
   margin-top: 8px;
   letter-spacing: 0.5px;
 }
+.debug-toggle {
+  font-size: 0.65rem;
+  color: var(--gray-sub);
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-top: 6px;
+  text-decoration: underline;
+}
+.debug-log {
+  display: none;
+  width: 100%;
+  max-width: 550px;
+  max-height: 160px;
+  overflow-y: auto;
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 8px;
+  font-family: monospace;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+.debug-log div { white-space: pre-wrap; word-break: break-all; }
 </style>
 </head>
 <body>
@@ -258,13 +282,15 @@ body {
     <button class="action-btn" style="padding:8px; background:var(--palace-red);" onclick="saveWebhookUrl()">Save Webhook URL</button>
   </div>
   <div class="version-tag" id="version-tag"></div>
+  <button class="debug-toggle" onclick="toggleDebugLog()">🐞 Show debug log</button>
+  <div class="debug-log" id="debug-log"></div>
 </div>
 
 <script>
 // 🏷️ Bump this whenever you edit this file — makes it easy to confirm
 // which version is actually loaded inside the Notion embed (check console
 // or the tiny gray label under the widget).
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.4.0";
 
 let globalVolume = parseFloat(localStorage.getItem('habit_sine_volume')) || 0.7;
 
@@ -313,6 +339,28 @@ function clearStoredPageId(habit) {
   localStorage.removeItem(pageIdStorageKey(habit));
 }
 
+// 🐞 On-screen logger — for locked-down devices (e.g. managed Chromebooks)
+// where DevTools/Console is blocked by policy. Shows the same info visibly
+// inside the widget instead.
+function uiLog(msg, type) {
+  console.log(msg);
+  const panel = document.getElementById('debug-log');
+  if (!panel) return;
+  const line = document.createElement('div');
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  line.style.color = type === 'error' ? '#ff6b6b' : (type === 'ok' ? '#4caf50' : '#cccccc');
+  panel.appendChild(line);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function toggleDebugLog() {
+  const panel = document.getElementById('debug-log');
+  const btn = document.querySelector('.debug-toggle');
+  const showing = panel.style.display === 'block';
+  panel.style.display = showing ? 'none' : 'block';
+  btn.textContent = showing ? '🐞 Show debug log' : '🐞 Hide debug log';
+}
+
 // ⏰ Poll for a day rollover (the widget stays open inside a Notion embed
 // for hours, so we can't rely on a page reload to notice midnight passed).
 function watchForDayRollover() {
@@ -322,7 +370,7 @@ function watchForDayRollover() {
       currentDateKey = freshKey;
       loadCheckedStateForToday();
       renderHabits();
-      console.log(`[HabitTracker ${APP_VERSION}] New day detected (${currentDateKey}) — checkmarks reset.`);
+      uiLog(`New day detected (${currentDateKey}) — checkmarks reset.`, 'ok');
     }
   }, 60 * 1000);
 }
@@ -383,7 +431,7 @@ function playSatisfyingDongSound() {
 function createNotionEntry(habit) {
   const webhookUrl = getWebhookUrl();
   if (!webhookUrl || webhookUrl === "YOUR_WEBHOOK_URL") {
-    console.log(`[HabitTracker ${APP_VERSION}] Webhook URL not set yet.`);
+    uiLog(`Webhook URL not set yet.`, 'error');
     return;
   }
 
@@ -400,21 +448,26 @@ function createNotionEntry(habit) {
     version: APP_VERSION
   };
 
+  uiLog(`Sending CREATE to webhook for "${habit.name}"...`);
+
   fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   })
-    .then(res => res.json().catch(() => null))
+    .then(res => {
+      uiLog(`Webhook responded, HTTP status ${res.status}`, res.ok ? 'ok' : 'error');
+      return res.json().catch(() => null);
+    })
     .then(result => {
       if (result && result.pageId) {
         setStoredPageId(habit, result.pageId);
-        console.log(`[HabitTracker ${APP_VERSION}] Created page ${result.pageId} for "${habit.name}"`);
+        uiLog(`Created page ${result.pageId} for "${habit.name}"`, 'ok');
       } else {
-        console.warn(`[HabitTracker ${APP_VERSION}] Created, but no pageId came back — unchecking today won't be able to auto-delete this entry until Make.com is set up to respond with { "pageId": ... }.`);
+        uiLog(`Created, but no pageId came back in the response — unchecking today won't auto-delete this entry until Make.com responds with JSON like {"pageId": ...}.`, 'error');
       }
     })
-    .catch(err => console.error("Create error:", err));
+    .catch(err => uiLog(`Create FAILED: ${err.message} (usually means the webhook URL is wrong, or the network request never left the page)`, 'error'));
 }
 
 // 🗑️ Delete the matching Notion page when a habit is unchecked the same day
@@ -427,7 +480,7 @@ function deleteNotionEntry(habit) {
 
   const pageId = getStoredPageId(habit);
   if (!pageId) {
-    console.warn(`[HabitTracker ${APP_VERSION}] No stored page id for "${habit.name}" today — nothing to delete (either it was never created, or the widget reloaded and lost track).`);
+    uiLog(`No stored page id for "${habit.name}" today — nothing to delete (either it was never created, or the widget reloaded and lost track).`, 'error');
     return;
   }
 
@@ -438,16 +491,19 @@ function deleteNotionEntry(habit) {
     version: APP_VERSION
   };
 
+  uiLog(`Sending DELETE to webhook for "${habit.name}" (page ${pageId})...`);
+
   fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   })
-    .then(() => {
+    .then(res => {
+      uiLog(`Webhook responded, HTTP status ${res.status}`, res.ok ? 'ok' : 'error');
       clearStoredPageId(habit);
-      console.log(`[HabitTracker ${APP_VERSION}] Deleted page ${pageId} for "${habit.name}"`);
+      uiLog(`Deleted page ${pageId} for "${habit.name}"`, 'ok');
     })
-    .catch(err => console.error("Delete error:", err));
+    .catch(err => uiLog(`Delete FAILED: ${err.message}`, 'error'));
 }
 
 function renderHabits() {
@@ -653,7 +709,8 @@ watchForDayRollover();
 
 const versionEl = document.getElementById('version-tag');
 if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
-console.log(`[HabitTracker] loaded ${APP_VERSION} — today's key: ${currentDateKey}`);
+uiLog(`Widget loaded, version ${APP_VERSION} — today's key: ${currentDateKey}`, 'ok');
+uiLog(`Using webhook URL: ${getWebhookUrl()}`);
 </script>
 </body>
 </html>
