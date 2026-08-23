@@ -1,1 +1,270 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notion Progress Widget</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700&family=Prompt:wght@400;600&display=swap');
 
+    :root {
+      --primary-color: #9e3640;
+      --success-color: #2e7d32;
+      --bg-color: #ffffff;
+      --text-main: #37352f;
+      --text-sub: #787774;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', 'Prompt', sans-serif;
+    }
+
+    body {
+      background-color: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+
+    .card {
+      background: var(--bg-color);
+      width: 100%;
+      max-width: 260px;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.06);
+      text-align: center;
+      position: relative;
+    }
+
+    .settings-icon {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      cursor: pointer;
+      color: var(--text-sub);
+      font-size: 14px;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+    .settings-icon:hover { opacity: 1; }
+
+    .title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 12px;
+    }
+
+    /* Circle Progress */
+    .progress-container {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      margin: 0 auto 12px;
+    }
+
+    .circle-bg {
+      fill: none;
+      stroke: #f0ede9;
+      stroke-width: 8;
+    }
+
+    .circle-progress {
+      fill: none;
+      stroke: var(--primary-color);
+      stroke-width: 8;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 283;
+      transition: stroke-dashoffset 0.4s ease, stroke 0.3s ease;
+    }
+
+    .percentage-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--primary-color);
+      transition: color 0.3s ease;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1.5px solid var(--primary-color);
+      background: transparent;
+      color: var(--primary-color);
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* Complete State */
+    .complete .circle-progress { stroke: var(--success-color); }
+    .complete .percentage-text { color: var(--success-color); }
+    .complete .btn { border-color: var(--success-color); color: var(--success-color); }
+    .complete .btn:hover { background: var(--success-color); color: white; }
+
+    /* Settings Panel */
+    .settings-panel {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.98);
+      border-radius: 16px;
+      padding: 16px;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      z-index: 10;
+    }
+    .settings-panel.active { display: flex; }
+    
+    .settings-panel label {
+      font-size: 11px;
+      color: var(--text-sub);
+      text-align: left;
+    }
+    .settings-panel input {
+      padding: 6px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .save-btn {
+      background: var(--text-main);
+      color: white;
+      border: none;
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="widgetCard">
+    <div class="settings-icon" onclick="toggleSettings()">⚙️</div>
+    
+    <div class="title" id="displayTitle">Progress</div>
+
+    <div class="progress-container">
+      <svg width="110" height="110" viewBox="0 0 100 100">
+        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+        <circle class="circle-progress" id="progressCircle" cx="50" cy="50" r="45"></circle>
+      </svg>
+      <div class="percentage-text" id="percentText">0%</div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" onclick="adjustValue(-stepValue)">-</button>
+      <button class="btn" onclick="adjustValue(stepValue)">+</button>
+    </div>
+
+    <!-- Hidden Settings Modal -->
+    <div class="settings-panel" id="settingsPanel">
+      <label>Title</label>
+      <input type="text" id="titleInput" value="Progress">
+      
+      <label>Max Value (100% Target)</label>
+      <input type="number" id="maxInput" value="10">
+
+      <label>Step per Click (+ / -)</label>
+      <input type="number" id="stepInput" value="1">
+
+      <button class="save-btn" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+
+  <script>
+    let currentValue = parseInt(localStorage.getItem('notion_val')) || 0;
+    let maxValue = parseInt(localStorage.getItem('notion_max')) || 10;
+    let stepValue = parseInt(localStorage.getItem('notion_step')) || 1;
+    let widgetTitle = localStorage.getItem('notion_title') || "Progress";
+
+    const circle = id('progressCircle');
+    const text = id('percentText');
+    const card = id('widgetCard');
+    const circumference = 2 * Math.PI * 45;
+
+    function id(str) { return document.getElementById(str); }
+
+    function updateWidget() {
+      if (currentValue > maxValue) currentValue = maxValue;
+      if (currentValue < 0) currentValue = 0;
+
+      const percentage = Math.round((currentValue / maxValue) * 100);
+      const offset = circumference - (percentage / 100) * circumference;
+      
+      circle.style.strokeDashoffset = offset;
+      text.innerText = `${percentage}%`;
+
+      if (percentage >= 100) {
+        card.classList.add('complete');
+      } else {
+        card.classList.remove('complete');
+      }
+
+      id('displayTitle').innerText = widgetTitle;
+      localStorage.setItem('notion_val', currentValue);
+    }
+
+    function adjustValue(amount) {
+      currentValue += amount;
+      updateWidget();
+    }
+
+    function toggleSettings() {
+      id('titleInput').value = widgetTitle;
+      id('maxInput').value = maxValue;
+      id('stepInput').value = stepValue;
+      id('settingsPanel').classList.toggle('active');
+    }
+
+    function saveSettings() {
+      widgetTitle = id('titleInput').value || "Progress";
+      maxValue = parseInt(id('maxInput').value) || 10;
+      stepValue = parseInt(id('stepInput').value) || 1;
+
+      localStorage.setItem('notion_title', widgetTitle);
+      localStorage.setItem('notion_max', maxValue);
+      localStorage.setItem('notion_step', stepValue);
+
+      id('settingsPanel').classList.remove('active');
+      updateWidget();
+    }
+
+    updateWidget();
+  </script>
+</body>
+</html>
