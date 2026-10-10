@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palace's RPG Save Stopwatch</title>
+<style>
+:root {
+  --bg-outer: transparent;
+  --bg-widget: #FDF3F2;
+  --border-color: #8B0016;
+  --text-color: #8B0016;
+  --btn-bg: #ffffff;
+  --btn-start-bg: #8B0016;
+  --btn-start-text: #FDF3F2;
+  --save-btn-bg: #f1dbda;
+  --save-btn-text: #b07c7c;
+  --save-item-bg: #ffffff;
+  --shadow-color: #8B0016;
+  --modal-overlay: rgba(139, 0, 22, 0.25);
+}
+
+[data-theme="dark"] {
+  --bg-outer: #121212; /* สีพื้นหลังนอกกรอบ Dark Mode */
+  --bg-widget: #1e1e1e;
+  --border-color: #ff5c75;
+  --text-color: #ffccd5;
+  --btn-bg: #2a2a2a;
+  --btn-start-bg: #ff5c75;
+  --btn-start-text: #121212;
+  --save-btn-bg: #3a2226;
+  --save-btn-text: #ff8fa3;
+  --save-item-bg: #252525;
+  --shadow-color: #ff5c75;
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+}
+
+body {
+background-color: var(--bg-outer);
+margin: 0;
+display: flex;
+justify-content: center;
+align-items: center;
+min-height: 100vh;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+padding: 20px;
+box-sizing: border-box;
+position: relative;
+overflow: hidden;
+transition: background-color 0.3s ease;
+}
+
+/* คอนเทนเนอร์หลักสำหรับควบคุมการย่อขยายแบบคงสัดส่วน และบังคับกึ่งกลางเสมอ */
+.scaler-wrapper {
+transform-origin: center center;
+transition: transform 0.2s ease;
+display: flex;
+justify-content: center;
+align-items: center;
+position: relative;
+}
+
+.widget-container {
+background: var(--bg-widget);
+border: 2px solid var(--border-color);
+border-radius: 20px;
+padding: 24px;
+width: 280px;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+box-shadow: 4px 4px 0px var(--shadow-color);
+color: var(--text-color);
+box-sizing: border-box;
+position: relative;
+transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ปุ่มเปลี่ยนโหมด (รูปดวงจันทร์) อยู่มุมซ้ายบนของกรอบ */
+.theme-toggle-btn {
+position: absolute;
+top: 10px;
+left: 14px;
+background: transparent;
+border: 1.5px solid var(--border-color);
+border-radius: 6px;
+color: var(--text-color);
+font-size: 0.75rem;
+width: 24px;
+height: 24px;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: all 0.2s ease;
+padding: 0;
+box-shadow: 1px 1px 0px var(--shadow-color);
+z-index: 10;
+}
+
+.theme-toggle-btn:hover {
+transform: translate(-1px, -1px);
+box-shadow: 2px 2px 0px var(--shadow-color);
+}
+
+/* ตัวควบคุมขนาดมินิมอลแบบซ่อนอัตโนมัติ (มุมขวาบน) */
+.scale-control-box {
+position: absolute;
+top: 10px;
+right: 14px;
+display: flex;
+align-items: center;
+gap: 5px;
+font-size: 0.6rem;
+font-weight: 800;
+letter-spacing: 0.5px;
+opacity: 0;
+transform: translateY(-3px);
+transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+z-index: 10;
+pointer-events: none;
+color: var(--text-color);
+}
+
+.widget-container:hover .scale-control-box,
+.scale-control-box:focus-within {
+opacity: 0.7;
+transform: translateY(0);
+pointer-events: auto;
+}
+
+.scale-control-box:hover {
+opacity: 1 !important;
+}
+
+.scale-input {
+width: 32px;
+background: var(--btn-bg);
+border: 1.5px solid var(--border-color);
+border-radius: 6px;
+color: var(--text-color);
+font-size: 0.65rem;
+font-weight: bold;
+text-align: center;
+outline: none;
+padding: 2px;
+box-shadow: 1px 1px 0px var(--shadow-color);
+transition: all 0.2s;
+}
+
+.scale-input:focus {
+box-shadow: 2px 2px 0px var(--shadow-color);
+background: var(--bg-widget);
+}
+
+/* Editable Title Styled like a clean input */
+.title-input {
+background: transparent;
+border: none;
+border-bottom: 2px dashed var(--border-color);
+opacity: 0.8;
+color: var(--text-color);
+font-size: 0.85rem;
+font-weight: 800;
+text-align: center;
+text-transform: uppercase;
+letter-spacing: 1.5px;
+width: 90%;
+margin-bottom: 10px;
+outline: none;
+padding: 4px 0;
+transition: border-color 0.2s, color 0.3s;
+display: block;
+}
+.title-input:focus {
+border-bottom-color: var(--border-color);
+opacity: 1;
+}
+.timer-display {
+font-size: 3rem;
+font-weight: 800;
+font-variant-numeric: tabular-nums;
+margin: 5px 0 20px 0;
+letter-spacing: 1px;
+color: var(--text-color);
+width: 100%;
+text-align: center;
+transition: color 0.3s;
+}
+.control-buttons {
+display: flex;
+justify-content: space-between;
+gap: 10px;
+margin-bottom: 16px;
+width: 100%;
+box-sizing: border-box;
+}
+.btn {
+background-color: var(--btn-bg);
+color: var(--text-color);
+border: 2px solid var(--border-color);
+border-radius: 12px;
+padding: 10px;
+font-size: 0.82rem;
+font-weight: bold;
+text-transform: uppercase;
+cursor: pointer;
+flex: 1;
+transition: all 0.2s ease;
+box-shadow: 2px 2px 0px var(--shadow-color);
+}
+.btn:hover {
+transform: translate(-1px, -1px);
+box-shadow: 3px 3px 0px var(--shadow-color);
+}
+.btn:active {
+transform: translate(1px, 1px);
+box-shadow: 1px 1px 0px var(--shadow-color);
+}
+.btn-start {
+background-color: var(--btn-start-bg);
+color: var(--btn-start-text);
+border: 2px solid var(--border-color);
+}
+.btn-start:hover {
+opacity: 0.9;
+}
+.save-button {
+background-color: var(--save-btn-bg);
+color: var(--save-btn-text);
+border: 2px solid var(--save-btn-text);
+border-radius: 12px;
+padding: 12px;
+font-size: 0.85rem;
+font-weight: bold;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+cursor: not-allowed;
+width: 100%;
+box-sizing: border-box;
+transition: all 0.3s ease;
+}
+.save-button.active {
+background-color: var(--btn-start-bg);
+color: var(--btn-start-text);
+border: 2px solid var(--border-color);
+box-shadow: 2px 2px 0px var(--shadow-color);
+cursor: pointer;
+}
+.save-button.active:hover {
+opacity: 0.9;
+transform: translateY(-1px);
+}
+
+/* Save Game List Section */
+.save-list-section {
+margin-top: 20px;
+border-top: 2px dashed var(--border-color);
+padding-top: 15px;
+text-align: left;
+width: 100%;
+box-sizing: border-box;
+transition: border-color 0.3s;
+}
+.save-list-title {
+font-size: 0.75rem;
+font-weight: bold;
+letter-spacing: 1px;
+text-transform: uppercase;
+margin-bottom: 5px;
+color: var(--text-color);
+text-align: center;
+cursor: pointer;
+user-select: none;
+display: flex;
+justify-content: center;
+align-items: center;
+gap: 6px;
+transition: color 0.3s;
+}
+.save-list-title::after {
+content: '▲';
+font-size: 0.6rem;
+transition: transform 0.3s ease;
+}
+.save-list-section.collapsed .save-list-title::after {
+transform: rotate(180deg);
+}
+.save-list-container {
+max-height: 150px;
+overflow-y: auto;
+transition: max-height 0.3s ease, opacity 0.3s ease;
+opacity: 1;
+width: 100%;
+}
+.save-list-section.collapsed .save-list-container {
+max-height: 0px;
+opacity: 0;
+overflow: hidden;
+}
+.save-list {
+list-style: none;
+padding: 0;
+margin: 0;
+width: 100%;
+}
+.save-list-container::-webkit-scrollbar {
+width: 4px;
+}
+.save-list-container::-webkit-scrollbar-thumb {
+background: var(--border-color);
+border-radius: 4px;
+}
+.save-item {
+display: flex;
+justify-content: space-between;
+align-items: center;
+background: var(--save-item-bg);
+border: 1.5px solid var(--border-color);
+border-radius: 10px;
+padding: 8px 10px;
+margin-bottom: 8px;
+box-shadow: 2px 2px 0px var(--shadow-color);
+box-sizing: border-box;
+transition: background 0.3s, border-color 0.3s;
+}
+.save-info {
+overflow: hidden;
+display: flex;
+flex-direction: column;
+flex: 1;
+margin-right: 8px;
+}
+.save-name-container {
+display: flex;
+align-items: center;
+gap: 4px;
+}
+.save-name {
+font-size: 0.8rem;
+font-weight: bold;
+color: var(--text-color);
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+cursor: pointer;
+border: 1px solid transparent;
+padding: 1px 3px;
+border-radius: 4px;
+}
+.save-name:hover {
+border-color: var(--border-color);
+}
+.save-name-input {
+font-size: 0.8rem;
+font-weight: bold;
+color: var(--text-color);
+border: 1px solid var(--border-color);
+background: var(--bg-widget);
+border-radius: 4px;
+padding: 1px 3px;
+width: 90%;
+outline: none;
+}
+.edit-icon {
+font-size: 0.65rem;
+opacity: 0.6;
+cursor: pointer;
+}
+.edit-icon:hover {
+opacity: 1;
+}
+.save-time {
+font-size: 0.7rem;
+color: var(--text-color);
+opacity: 0.7;
+padding-left: 3px;
+}
+.save-actions {
+display: flex;
+gap: 5px;
+}
+.action-btn {
+background: var(--btn-bg);
+border: 1.5px solid var(--border-color);
+border-radius: 6px;
+color: var(--text-color);
+font-size: 0.7rem;
+font-weight: bold;
+text-transform: uppercase;
+cursor: pointer;
+padding: 3px 6px;
+transition: all 0.2s;
+}
+.action-btn:hover {
+background: var(--border-color);
+color: var(--btn-start-text);
+}
+.btn-delete {
+opacity: 0.7;
+}
+.btn-delete:hover {
+opacity: 1;
+}
+
+/* --- IN-WIDGET MODAL DIALOG STYLE --- */
+.custom-modal-overlay {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: var(--modal-overlay);
+border-radius: 20px;
+display: flex;
+justify-content: center;
+align-items: center;
+z-index: 100;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.2s ease;
+}
+.custom-modal-overlay.active {
+opacity: 1;
+pointer-events: auto;
+}
+.custom-modal {
+background: var(--bg-widget);
+border: 2px solid var(--border-color);
+border-radius: 16px;
+padding: 16px;
+width: 85%;
+box-shadow: 4px 4px 0px var(--shadow-color);
+text-align: center;
+box-sizing: border-box;
+animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popIn {
+from { transform: scale(0.8); opacity: 0; }
+to { transform: scale(1); opacity: 1; }
+}
+.modal-title {
+font-size: 0.75rem;
+font-weight: 800;
+letter-spacing: 1px;
+margin-bottom: 8px;
+color: var(--text-color);
+text-transform: uppercase;
+}
+.modal-text {
+font-size: 0.78rem;
+line-height: 1.4;
+margin-bottom: 16px;
+color: var(--text-color);
+}
+.modal-buttons {
+display: flex;
+gap: 8px;
+}
+.modal-btn {
+flex: 1;
+padding: 8px;
+font-size: 0.75rem;
+font-weight: bold;
+border-radius: 8px;
+text-transform: uppercase;
+cursor: pointer;
+border: 2px solid var(--border-color);
+transition: all 0.1s;
+}
+.modal-btn-confirm {
+background: var(--btn-start-bg);
+color: var(--btn-start-text);
+}
+.modal-btn-confirm:hover {
+opacity: 0.9;
+}
+.modal-btn-cancel {
+background: var(--btn-bg);
+color: var(--text-color);
+}
+.modal-btn-cancel:hover {
+opacity: 0.8;
+}
+</style>
+</head>
+<body>
+
+<!-- ครอบเพื่อทำระบบ Scale -->
+<div class="scaler-wrapper" id="scalerWrapper">
+<div class="widget-container">
+<!-- ปุ่มเปลี่ยนโหมด (ดวงจันทร์) อยู่มุมซ้ายบน -->
+<button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+
+<!-- ตัวควบคุมขนาดมินิมอลแบบซ่อนอัตโนมัติ (มุมขวาบน) -->
+<div class="scale-control-box">
+<span>SIZE:</span>
+<input type="number" id="scaleInput" class="scale-input" value="1" step="0.1" min="0.3" max="3" oninput="changeWidgetScale(this.value)">
+</div>
+
+<!-- Editable Title Box -->
+<input type="text" id="titleInput" class="title-input" value="Focus Session" placeholder="ENTER SESSION NAME">
+
+<div class="timer-display" id="display">00:00:00</div>
+
+<div class="control-buttons">
+<button class="btn btn-start" id="startBtn" onclick="startTimer()">Start</button>
+<button class="btn" id="pauseBtn" onclick="pauseTimer()" style="display:none;">Pause</button>
+<button class="btn" id="resetBtn" onclick="resetTimer()">Reset</button>
+</div>
+
+<button class="save-button" id="saveBtn" onclick="saveGame()">Record Progress</button>
+
+<!-- Saved Game Files (List) -->
+<div class="save-list-section" id="saveListSection">
+<div class="save-list-title" id="saveListToggle" onclick="toggleSaveList()">💾 Saved Files</div>
+<div class="save-list-container">
+<ul class="save-list" id="saveList">
+<!-- Save slots will be injected here -->
+</ul>
+</div>
+</div>
+
+<!-- IN-WIDGET CUSTOM MODAL FOR SYSTEM DIALOGS (OVERWRITE & DELETE) -->
+<div class="custom-modal-overlay" id="customModal">
+<div class="custom-modal">
+<div class="modal-title" id="modalTitle">⚠️ Notification</div>
+<div class="modal-text" id="modalText">Message goes here...</div>
+<div class="modal-buttons">
+<button class="modal-btn modal-btn-confirm" id="modalConfirmBtn">Confirm</button>
+<button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+let startTime = 0;
+let elapsedTime = 0;
+let timerInterval;
+let isRunning = false;
+
+const scalerWrapper = document.getElementById('scalerWrapper');
+const scaleInput = document.getElementById('scaleInput');
+const display = document.getElementById('display');
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const saveBtn = document.getElementById('saveBtn');
+const titleInput = document.getElementById('titleInput');
+const saveList = document.getElementById('saveList');
+const saveListSection = document.getElementById('saveListSection');
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+
+// ดึงองค์ประกอบของ Modal
+const customModal = document.getElementById('customModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalText = document.getElementById('modalText');
+const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+
+// โหลดข้อมูลบันทึก ขนาด และ Theme ล่าสุดจาก LocalStorage
+let savedGames = JSON.parse(localStorage.getItem('palace_stopwatch_saves')) || [];
+let currentScale = parseFloat(localStorage.getItem('palace_stopwatch_scale')) || 1;
+let currentTheme = localStorage.getItem('palace_stopwatch_theme') || 'light';
+
+// ตั้งค่า Theme และ Scale เริ่มต้น
+if (currentTheme === 'dark') {
+  document.documentElement.setAttribute('data-theme', 'dark');
+  themeToggleBtn.innerHTML = '☀️';
+} else {
+  document.documentElement.removeAttribute('data-theme');
+  themeToggleBtn.innerHTML = '🌙';
+}
+
+scaleInput.value = currentScale;
+changeWidgetScale(currentScale);
+
+// ตั้งค่าตั้งต้นให้พับลิสต์
+saveListSection.classList.add('collapsed');
+
+renderSaves();
+
+/* --- THEME TOGGLE FUNCTION --- */
+function toggleTheme() {
+  const currentAttr = document.documentElement.getAttribute('data-theme');
+  if (currentAttr === 'dark') {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('palace_stopwatch_theme', 'light');
+    themeToggleBtn.innerHTML = '🌙';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('palace_stopwatch_theme', 'dark');
+    themeToggleBtn.innerHTML = '☀️';
+  }
+}
+
+/* --- DYNAMIC SCALE FUNCTION --- */
+function changeWidgetScale(val) {
+let scaleValue = parseFloat(val);
+if (isNaN(scaleValue) || scaleValue <= 0) scaleValue = 1; 
+scalerWrapper.style.transform = `scale(${scaleValue})`;
+localStorage.setItem('palace_stopwatch_scale', scaleValue);
+}
+
+function timeToString(time) {
+let diffInHrs = time / 3600000;
+let hh = Math.floor(diffInHrs);
+
+let diffInMin = (diffInHrs - hh) * 60;
+let mm = Math.floor(diffInMin);
+
+let diffInSec = (diffInMin - mm) * 60;
+let ss = Math.floor(diffInSec);
+
+let formattedHH = hh.toString().padStart(2, "0");
+let formattedMM = mm.toString().padStart(2, "0");
+let formattedSS = ss.toString().padStart(2, "0");
+
+return `${formattedHH}:${formattedMM}:${formattedSS}`;
+}
+
+function startTimer() {
+if (isRunning) return;
+isRunning = true;
+startTime = Date.now() - elapsedTime;
+timerInterval = setInterval(function printTime() {
+elapsedTime = Date.now() - startTime;
+display.innerHTML = timeToString(elapsedTime);
+}, 1000);
+
+startBtn.style.display = "none";
+pauseBtn.style.display = "block";
+
+saveBtn.classList.remove('active');
+saveBtn.disabled = true;
+}
+
+function pauseTimer() {
+clearInterval(timerInterval);
+isRunning = false;
+startBtn.style.display = "block";
+startBtn.innerHTML = "Resume";
+pauseBtn.style.display = "none";
+
+if (elapsedTime > 0) {
+saveBtn.classList.add('active');
+saveBtn.disabled = false;
+}
+}
+
+function resetTimer() {
+clearInterval(timerInterval);
+isRunning = false;
+elapsedTime = 0;
+display.innerHTML = "00:00:00";
+startBtn.style.display = "block";
+startBtn.innerHTML = "Start";
+pauseBtn.style.display = "none";
+
+saveBtn.classList.remove('active');
+saveBtn.disabled = true;
+}
+
+function toggleSaveList() {
+saveListSection.classList.toggle('collapsed');
+}
+
+/* --- GENERIC CUSTOM MODAL CONTROL --- */
+function showCustomModal(title, message, confirmLabel, onConfirmCallback) {
+modalTitle.innerHTML = title;
+modalText.innerHTML = message;
+modalConfirmBtn.innerHTML = confirmLabel;
+
+modalConfirmBtn.onclick = function() {
+onConfirmCallback();
+closeModal();
+};
+
+customModal.classList.add('active');
+}
+
+function closeModal() {
+customModal.classList.remove('active');
+}
+
+/* --- SAVE GAME SYSTEM --- */
+function saveGame() {
+if (elapsedTime === 0 || isRunning) return;
+
+const sessionName = titleInput.value.trim() || "Untitled Session";
+const durationString = timeToString(elapsedTime);
+const saveId = Date.now();
+
+const existingIndex = savedGames.findIndex(g => g.title.toLowerCase() === sessionName.toLowerCase());
+
+if (existingIndex !== -1) {
+const title = "⚠️ Overwrite Warning";
+const message = `A record named <strong>"${sessionName}"</strong> already exists.<br><br>Do you want to overwrite it with your current progress?`;
+showCustomModal(title, message, "Overwrite", function() {
+savedGames[existingIndex].timeStr = durationString;
+savedGames[existingIndex].ms = elapsedTime;
+savedGames[existingIndex].date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+renderSaves();
+sendToNotionDatabase(savedGames[existingIndex]);
+resetTimer();
+});
+return; 
+}
+
+const newSave = {
+id: saveId,
+title: sessionName,
+timeStr: durationString,
+ms: elapsedTime,
+date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+};
+
+savedGames.unshift(newSave);
+localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+
+renderSaves();
+sendToNotionDatabase(newSave);
+resetTimer();
+}
+
+/* --- EDIT SAVE NAME ON THE FLY --- */
+function enableNameEdit(id) {
+const nameSpan = document.getElementById(`name-${id}`);
+const editIcon = document.getElementById(`edit-icon-${id}`);
+if (!nameSpan) return;
+
+const currentName = nameSpan.textContent;
+const input = document.createElement('input');
+input.type = 'text';
+input.className = 'save-name-input';
+input.value = currentName;
+
+if (editIcon) editIcon.style.display = 'none';
+
+nameSpan.replaceWith(input);
+input.focus();
+input.select();
+
+const saveNewName = () => {
+const newName = input.value.trim() || "Untitled Session";
+const gameIndex = savedGames.findIndex(g => g.id === id);
+if (gameIndex !== -1) {
+savedGames[gameIndex].title = newName;
+localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+}
+renderSaves();
+};
+
+input.addEventListener('keydown', (e) => {
+if (e.key === 'Enter') saveNewName();
+if (e.key === 'Escape') renderSaves();
+});
+
+input.addEventListener('blur', saveNewName);
+}
+
+function renderSaves() {
+saveList.innerHTML = '';
+
+if (savedGames.length === 0) {
+saveList.innerHTML = '<li style="text-align:center; font-size:0.75rem; opacity: 0.6; padding: 10px;">No records established.</li>';
+return;
+}
+
+savedGames.forEach(game => {
+const li = document.createElement('li');
+li.className = 'save-item';
+li.innerHTML = `
+<div class="save-info">
+<div class="save-name-container">
+<span class="save-name" id="name-${game.id}" onclick="enableNameEdit(${game.id})" title="Click to rename">${game.title}</span>
+<span class="edit-icon" id="edit-icon-${game.id}" onclick="enableNameEdit(${game.id})">✏️</span>
+</div>
+<span class="save-time">${game.timeStr} (${game.date})</span>
+</div>
+<div class="save-actions">
+<button class="action-btn" onclick="loadGame(${game.id})">Load</button>
+<button class="action-btn btn-delete" onclick="deleteGame(${game.id})">✕</button>
+</div>
+`;
+saveList.appendChild(li);
+});
+}
+
+/* --- LOAD GAME SYSTEM --- */
+function loadGame(id) {
+const targetGame = savedGames.find(g => g.id === id);
+if (!targetGame) return;
+
+clearInterval(timerInterval);
+isRunning = false;
+
+elapsedTime = targetGame.ms;
+display.innerHTML = targetGame.timeStr;
+titleInput.value = targetGame.title;
+
+startBtn.style.display = "block";
+startBtn.innerHTML = "Resume";
+pauseBtn.style.display = "none";
+
+saveBtn.classList.add('active');
+saveBtn.disabled = false;
+}
+
+/* --- DELETE GAME SYSTEM (USE CUSTOM MODAL) --- */
+function deleteGame(id) {
+const targetGame = savedGames.find(g => g.id === id);
+if (!targetGame) return;
+
+const title = "🗑️ Delete Record";
+const message = `Are you sure you want to permanently delete the record <strong>"${targetGame.title}"</strong>?`;
+
+showCustomModal(title, message, "Delete", function() {
+savedGames = savedGames.filter(g => g.id !== id);
+localStorage.setItem('palace_stopwatch_saves', JSON.stringify(savedGames));
+renderSaves();
+});
+}
+
+/* --- WEBHOOK TO NOTION (OPTIONAL) --- */
+function sendToNotionDatabase(saveData) {
+const webhookUrl = 'YOUR_WEBHOOK_URL_HERE';
+if (webhookUrl === 'YOUR_WEBHOOK_URL_HERE') return;
+
+fetch(webhookUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+task: saveData.title,
+duration: saveData.timeStr,
+minutes: Math.round(saveData.ms / 60000),
+date: new Date().toISOString().split('T')[0]
+})
+}).catch(err => console.error('Database Sync Error:', err));
+}
+</script>
+
+</body>
+</html>
